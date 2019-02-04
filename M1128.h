@@ -36,7 +36,8 @@ class M1128 {
     void wifiConfig(char* ssid, char* pass);
     void wifiConfigAP(const char* ap_ssid, const char* ap_pass);
     void wifiConfigAP(const char* ap_ssid, const char* ap_pass, IPAddress localip, IPAddress gateway, IPAddress subnet);
-    const char* myAddr();
+    const char* myId();
+    void setId(const char* id);
     const char* constructTopic(const char* topic);
     bool onWiFiConfigChanged();
     bool onReconnect();
@@ -65,6 +66,7 @@ class M1128 {
     uint8_t _pinResetButtonLast = HIGH;
     char _topic_buf[PAYLOAD_BUFFER_SIZE];
     char _myAddr[33];
+    char _custAddr[33];
 
     void _initNetwork();
     void _checkResetButton();

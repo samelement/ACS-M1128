@@ -65,7 +65,7 @@ const char* M1128::constructTopic(const char* topic) {
   strcpy(_topic_buf,"");
   strcat(_topic_buf,_dev_id);
   strcat(_topic_buf,PAYLOAD_DELIMITER);
-  strcat(_topic_buf,_myAddr);
+  strcat(_topic_buf,myId());
   strcat(_topic_buf,PAYLOAD_DELIMITER);
   strcat(_topic_buf,topic);
   if (_debug) {
@@ -75,8 +75,12 @@ const char* M1128::constructTopic(const char* topic) {
   return _topic_buf;
 }
 
-const char* M1128::myAddr() {
-  return _myAddr;
+const char* M1128::myId() {
+  return strlen(_custAddr)>0?_custAddr:_myAddr;
+}
+
+void M1128::setId(const char* id) {
+  strcpy(_custAddr,id);
 }
 
 void M1128::reset() {
@@ -126,7 +130,7 @@ bool M1128::_mqttConnect() {
   _onReconnect = false;
   if (!_mqttClient->connected()) {
     if (_debug) _serialDebug->println(F("Connecting to MQTT server"));
-    MQTT::Connect con(_myAddr);
+    MQTT::Connect con(myId());
     con.set_clean_session(_mqttCleanSession);
     con.set_will(constructTopic(MQTT_WILL_TOPIC), MQTT_WILL_VALUE, MQTT_WILL_QOS, MQTT_WILL_RETAIN);
     con.set_auth(_dev_user, _dev_pass);
@@ -166,7 +170,7 @@ bool M1128::_wifiConnect() {
       if (_debug) {
         _serialDebug->println(F("WiFi connected"));
         _serialDebug->print(F("My Device Id: "));
-        _serialDebug->println(_myAddr);
+        _serialDebug->println(myId());
         _serialDebug->print(F("Local IP Address: "));
         _serialDebug->println(WiFi.localIP());   
       }    
