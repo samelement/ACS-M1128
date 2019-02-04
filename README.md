@@ -12,4 +12,7 @@ Arduino ESP8266 filesystem uploader https://github.com/esp8266/arduino-esp8266fs
 Libraries:
 PubSubClient https://github.com/Imroy/pubsubclient, SPIFFSReadServer extension.
 
+MQTT Convention:
+Follow SAM Element Sammy MQTT Convention. 
+
 Learn by doing with examples.
