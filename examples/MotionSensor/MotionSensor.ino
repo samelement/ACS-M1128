@@ -15,9 +15,6 @@
 #define WIFI_DEFAULT_SSID "SmartMotion"
 #define WIFI_DEFAULT_PASS "abcd1234"
 
-#define PAYLOAD_DELIMITER "/"
-#define PAYLOAD_BUFFER_SIZE 501 //max mqtt string
-
 WiFiClient wclient;
 PubSubClient client(wclient, MQTT_BROKER_HOST, MQTT_BROKER_PORT);
 HardwareSerial SerialDEBUG = Serial;
