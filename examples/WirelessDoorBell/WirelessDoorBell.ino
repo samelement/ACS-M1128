@@ -19,9 +19,6 @@
 #define DEVICE_PIN_BUTTON_INPUT 0
 #define DEVICE_PIN_BUTTON_OUTPUT 2
 
-#define PAYLOAD_DELIMITER "/"
-#define PAYLOAD_BUFFER_SIZE 501 //max mqtt string
-
 WiFiClient wclient;
 PubSubClient client(wclient, MQTT_BROKER_HOST, MQTT_BROKER_PORT);
 HardwareSerial SerialDEBUG = Serial;
