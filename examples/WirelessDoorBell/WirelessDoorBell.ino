@@ -15,9 +15,9 @@
 #define WIFI_DEFAULT_SSID "SmartBell"
 #define WIFI_DEFAULT_PASS "abcd1234"
 
-#define DEVICE_PIN_BUTTON_DEFSTATE LOW
-#define DEVICE_PIN_BUTTON_INPUT 0
-#define DEVICE_PIN_BUTTON_OUTPUT 2
+#define DEVICE_PIN_BUTTON_DEFSTATE HIGH // default is HIGH, it means active LOW.
+#define DEVICE_PIN_BUTTON_INPUT 0 // pin GPIO0 for input
+#define DEVICE_PIN_BUTTON_OUTPUT 2 // pin GPio2 for output
 
 WiFiClient wclient;
 PubSubClient client(wclient, MQTT_BROKER_HOST, MQTT_BROKER_PORT);
@@ -46,7 +46,7 @@ void setup() {
   }
   loadConfig();
   client.set_callback(callback);
-  pinMode(DEVICE_PIN_BUTTON_INPUT,INPUT);
+  pinMode(DEVICE_PIN_BUTTON_INPUT,INPUT_PULLUP);
   pinMode(DEVICE_PIN_BUTTON_OUTPUT,OUTPUT);
   digitalWrite(DEVICE_PIN_BUTTON_OUTPUT, DEVICE_PIN_BUTTON_DEFSTATE);
   pinMode(3, FUNCTION_3);
