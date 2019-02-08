@@ -29,19 +29,21 @@ void setup() {
     while (!SerialDEBUG);
     SerialDEBUG.println("Initializing..");
   }
-  client.set_callback(callback);
+  client.set_callback(callbackOnReceive);
   pinMode(DEVICE_PIN_INPUT,INPUT);
   pinMode(3, FUNCTION_3);
   obj.pinReset = 3;
   if (SECURE) obj.wifiClientSecure = &wclientSecure;    
   obj.devConfig(DEVELOPER_ID,DEVELOPER_USER,DEVELOPER_PASS);
   obj.wifiConfig(WIFI_DEFAULT_SSID,WIFI_DEFAULT_PASS);
+  obj.onReset = callbackOnReset;
+  obj.onReconnect = callbackOnReconnect;
+  obj.onWiFiConfigChanged = callbackOnWiFiConfigChanged;
   ESP.wdtEnable(8000);      
   obj.init(client,true,SerialDEBUG); //pass client, set clean_session=true, use debug.
   if (obj.isReady && client.connected()) {
     initPublish();    
     initSubscribe();
-    publishState("ready");
   }
   delay(10);
 }
@@ -50,21 +52,9 @@ void loop() {
   ESP.wdtFeed();
   obj.loop();
   checkSensor();
-  if (obj.onReconnect()) {
-    initSubscribe();
-    publishState("ready");
-  }
-  if (obj.onReset()) {
-    delay(1000);
-    obj.restart();
-  }
-  if (obj.onWiFiConfigChanged()) {
-    delay(1000);
-    obj.restart();
-  }
 }
 
-void callback(const MQTT::Publish& pub) {
+void callbackOnReceive(const MQTT::Publish& pub) {
   if (DEBUG) {
     SerialDEBUG.print(F("Receiving topic: "));
     SerialDEBUG.println(pub.topic());
@@ -73,6 +63,18 @@ void callback(const MQTT::Publish& pub) {
   }
   if (pub.topic()==obj.constructTopic("reset") && pub.payload_string()=="true") obj.reset();
   else if (pub.topic()==obj.constructTopic("restart") && pub.payload_string()=="true") obj.restart();
+}
+
+void callbackOnReconnect() {
+  initSubscribe();
+}
+
+void callbackOnWiFiConfigChanged() {
+  obj.restart();
+}
+
+void callbackOnReset() {
+  obj.restart();
 }
 
 void checkSensor() {
@@ -87,7 +89,7 @@ void checkSensor() {
 }
 
 void publishState(const char* state) {
-  client.publish(MQTT::Publish(obj.constructTopic("$state"), state).set_retain().set_qos(1));  
+  if (client.connected()) client.publish(MQTT::Publish(obj.constructTopic("$state"), state).set_retain().set_qos(1));  
 }
 
 void initPublish() {
@@ -125,4 +127,5 @@ void initSubscribe() {
     client.subscribe(MQTT::Subscribe().add_topic(obj.constructTopic("reset"),2));  
     client.subscribe(MQTT::Subscribe().add_topic(obj.constructTopic("restart"),2));  
   }
+  publishState("ready");
 }
