@@ -72,7 +72,6 @@ class M1128 {
     bool _onReset = false;
     bool _onReconnect = false;
     
-    bool _debug = false;
     uint8_t _pinResetButtonLast = HIGH;
     char _topic_buf[PAYLOAD_BUFFER_SIZE];
     char _myAddr[33];
