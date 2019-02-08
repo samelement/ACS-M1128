@@ -109,11 +109,19 @@ bool M1128::onReconnect() {
 }
 
 void M1128::_initNetwork() {
-  pinMode(pinReset, INPUT_PULLUP);
   SPIFFS.begin();
+  pinMode(pinReset, INPUT_PULLUP);
   _retrieveDeviceId();
   _checkResetButton();
   if (_wifiConnect()) {
+    if (wifiClientSecure!=NULL) {
+      if (SPIFFS.exists(MQTT_PATH_CA)) {
+        File ca = SPIFFS.open(MQTT_PATH_CA, "r");
+        if (ca && wifiClientSecure->loadCACert(ca)) if(_debug) _serialDebug->println(F("CA Certificate loaded..!"));
+        else if(_debug) _serialDebug->println(F("CA Certificate load failed..!"));          
+        ca.close();
+      }
+    }
     _mqttConnect();
     isReady = true;
   }

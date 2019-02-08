@@ -1,19 +1,28 @@
+#define USING_AXTLS
 #include <EEPROM.h>
+#include <time.h>
 #include <ESP8266WiFi.h>
+#include <WiFiClientSecure.h>
 #include <PubSubClient.h>
 #include <ESP8266WebServer.h>
 #include <FS.h>
+
+// force use of AxTLS (BearSSL is now default)
+#include <WiFiClientSecureAxTLS.h>
+using namespace axTLS;
 
 #ifndef M1128_h
 #define M1128_h
 
 #define MQTT_BROKER_HOST "iot.samelement.com"
 #define MQTT_BROKER_PORT 1883
+#define MQTT_BROKER_PORT_TLS 8883
 #define MQTT_WILL_TOPIC "$state"
 #define MQTT_WILL_VALUE "lost"
 #define MQTT_WILL_QOS 1
 #define MQTT_WILL_RETAIN true
 #define MQTT_KEEPALIVE 15
+#define MQTT_PATH_CA "/ca.crt"
 
 #define PAYLOAD_DELIMITER "/"
 #define PAYLOAD_BUFFER_SIZE 501
@@ -28,7 +37,8 @@ class M1128 {
     void init(PubSubClient &mqttClient, bool cleanSession);
     void init(PubSubClient &mqttClient, bool cleanSession, Stream &serialDebug);
     bool isReady = false;
-    
+    WiFiClientSecure *wifiClientSecure;
+
     void reset();
     void restart();
     void loop();
@@ -49,7 +59,7 @@ class M1128 {
     IPAddress _wifi_ap_localip;
     IPAddress _wifi_ap_gateway;
     IPAddress _wifi_ap_subnet;
-
+    
     const char* _dev_id;
     const char* _dev_user;
     const char* _dev_pass;    
@@ -78,7 +88,6 @@ class M1128 {
     void _handleWifiConfig();
     void _handleNotFound();
     bool _handleFileRead(String path);
-    
 };
 
 #endif
