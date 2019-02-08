@@ -28,12 +28,10 @@ void setup() {
   if (SECURE) obj.wifiClientSecure = &wclientSecure;  
   obj.devConfig(DEVELOPER_ID,DEVELOPER_USER,DEVELOPER_PASS);
   obj.wifiConfig(WIFI_DEFAULT_SSID,WIFI_DEFAULT_PASS);
+  obj.onReset = callbackOnReset;
+  obj.onWiFiConfigChanged = callbackOnWiFiConfigChanged;  
   ESP.wdtEnable(8000);  
   obj.init(client,true,SerialDEBUG); //pass client, set clean_session=true, use debug.
-  if (obj.onReset()) {
-    delay(1000);
-    obj.restart();
-  }
   if (obj.isReady && client.connected()) {
     client.publish(MQTT::Publish(obj.constructTopic("sensor/motion"), "true").set_retain(false).set_qos(1)); 
     initPublish();    
@@ -46,17 +44,16 @@ void setup() {
 
 void loop() {
   yield();
-  if (!obj.isReady) {
-    obj.loop();
-    if (obj.onReset()) {
-      delay(1000);
-      obj.restart();
-    }
-    if (obj.onWiFiConfigChanged()) {
-      delay(1000);
-      obj.restart();
-    }  
-  }
+  if (!obj.isReady) obj.loop();
+}
+
+void callbackOnWiFiConfigChanged() {
+  obj.restart();
+}
+
+void callbackOnReset() {
+  delay(2000);
+  obj.restart();
 }
 
 void initPublish() { 
