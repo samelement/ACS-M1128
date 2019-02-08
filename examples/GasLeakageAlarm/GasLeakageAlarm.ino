@@ -5,8 +5,9 @@
 #define SETTING_CODE 78 //0-255 range (a byte)
 #define SETTING_SIZE 128
 
-#define DEBUG true
-#define DEBUG_BAUD 9600
+#define SECURE true
+#define DEBUG true //true if you want to debug.
+#define DEBUG_BAUD 9600 //debug baud rate
 
 #define DEVELOPER_ID "your developer id"
 #define DEVELOPER_USER "your developer API username"
@@ -15,11 +16,12 @@
 #define WIFI_DEFAULT_SSID "GasAlarm"
 #define WIFI_DEFAULT_PASS "abcd1234"
 
-#define DEVICE_PIN_DEFSTATE LOW
-#define DEVICE_PIN_INPUT 0
+#define DEVICE_PIN_DEFSTATE LOW //initial/default pin state
+#define DEVICE_PIN_INPUT 0 //GPIO pin input
 
 WiFiClient wclient;
-PubSubClient client(wclient, MQTT_BROKER_HOST, MQTT_BROKER_PORT);
+WiFiClientSecure wclientSecure;
+PubSubClient client(SECURE?wclientSecure:wclient, MQTT_BROKER_HOST, SECURE?MQTT_BROKER_PORT_TLS:MQTT_BROKER_PORT);
 HardwareSerial SerialDEBUG = Serial;
 M1128 obj;
 
@@ -48,6 +50,7 @@ void setup() {
   pinMode(DEVICE_PIN_INPUT,INPUT);
   pinMode(3, FUNCTION_3);
   obj.pinReset = 3;
+  if (SECURE) obj.wifiClientSecure = &wclientSecure;    
   obj.devConfig(DEVELOPER_ID,DEVELOPER_USER,DEVELOPER_PASS);
   obj.wifiConfig(storage.wifi_ssid,storage.wifi_pass);
   obj.wifiConfigAP(WIFI_DEFAULT_SSID,WIFI_DEFAULT_PASS);
