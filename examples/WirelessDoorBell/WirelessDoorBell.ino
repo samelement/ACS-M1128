@@ -57,6 +57,7 @@ void setup() {
   obj.devConfig(DEVELOPER_ID,DEVELOPER_USER,DEVELOPER_PASS);
   obj.wifiConfig(storage.wifi_ssid,storage.wifi_pass);
   obj.wifiConfigAP(WIFI_DEFAULT_SSID,WIFI_DEFAULT_PASS);
+  ESP.wdtEnable(8000);    
   obj.init(client,true,SerialDEBUG); //pass client, set clean_session=true, use debug.
   if (obj.isReady && client.connected()) {
     initPublish();    
@@ -66,6 +67,7 @@ void setup() {
 }
 
 void loop() {
+  ESP.wdtFeed();
   obj.loop();
   checkBellButton();
   if (obj.onReconnect()) initSubscribe();
