@@ -1,17 +1,12 @@
-#include <EEPROM.h>
 #include "M1128.h"
-
-#define SETTING_START 0
-#define SETTING_CODE 78 //0-255 range (a byte)
-#define SETTING_SIZE 128
 
 #define SECURE true
 #define DEBUG true
 #define DEBUG_BAUD 9600
 
-#define DEVELOPER_ID "your developer id"
-#define DEVELOPER_USER "your developer API username"
-#define DEVELOPER_PASS "your developer API password"
+#define DEVELOPER_ID "1"
+#define DEVELOPER_USER "dmI0OkvoFRLRzHu3J3tEWQbIXQwDeF9q"
+#define DEVELOPER_PASS "dyUiAb1cjkS8FRrokTXxtY1s4DUmOJsa"
 
 #define WIFI_DEFAULT_SSID "SmartBell"
 #define WIFI_DEFAULT_PASS "abcd1234"
@@ -29,24 +24,12 @@ M1128 obj;
 bool pinButtonLastState = DEVICE_PIN_BUTTON_DEFSTATE;
 bool pinButtonCurrentState = DEVICE_PIN_BUTTON_DEFSTATE;
 
-struct Setting
-{
-  char wifi_ssid[33]; //max 32 char
-  char wifi_pass[65]; //max 64 char
-  uint16_t code;
-} storage = {
-  "",
-  "",
-  SETTING_CODE
-};
-
 void setup() {
   if (DEBUG) {
     SerialDEBUG.begin(DEBUG_BAUD, SERIAL_8N1, SERIAL_TX_ONLY);
     while (!SerialDEBUG);
     SerialDEBUG.println("Initializing..");
   }
-  loadConfig();
   client.set_callback(callback);
   pinMode(DEVICE_PIN_BUTTON_INPUT,INPUT_PULLUP);
   pinMode(DEVICE_PIN_BUTTON_OUTPUT,OUTPUT);
@@ -55,13 +38,13 @@ void setup() {
   if (SECURE) obj.wifiClientSecure = &wclientSecure;
   obj.pinReset = 3;
   obj.devConfig(DEVELOPER_ID,DEVELOPER_USER,DEVELOPER_PASS);
-  obj.wifiConfig(storage.wifi_ssid,storage.wifi_pass);
-  obj.wifiConfigAP(WIFI_DEFAULT_SSID,WIFI_DEFAULT_PASS);
-  ESP.wdtEnable(8000);    
+  obj.wifiConfig(WIFI_DEFAULT_SSID,WIFI_DEFAULT_PASS);
+  ESP.wdtEnable(8000);
   obj.init(client,true,SerialDEBUG); //pass client, set clean_session=true, use debug.
   if (obj.isReady && client.connected()) {
     initPublish();    
     initSubscribe();
+    publishState("ready");
   }
   delay(10);
 }
@@ -70,14 +53,15 @@ void loop() {
   ESP.wdtFeed();
   obj.loop();
   checkBellButton();
-  if (obj.onReconnect()) initSubscribe();
+  if (obj.onReconnect()) {
+    initSubscribe();
+    publishState("ready");
+  }
   if (obj.onReset()) {
-    clearConfig();
     delay(1000);
     obj.restart();
   }
   if (obj.onWiFiConfigChanged()) {
-    saveConfig();
     delay(1000);
     obj.restart();
   }
@@ -111,6 +95,10 @@ void bellMe() {
   client.publish(MQTT::Publish(obj.constructTopic("bell/button"), "true").set_retain(false).set_qos(1));   
 }
 
+void publishState(const char* state) {
+  client.publish(MQTT::Publish(obj.constructTopic("$state"), state).set_retain().set_qos(1));  
+}
+
 void initPublish() {
   if (client.connected()) {    
     client.publish(MQTT::Publish(obj.constructTopic("$state"), "init").set_retain().set_qos(1));
@@ -134,9 +122,6 @@ void initPublish() {
     client.publish(MQTT::Publish(obj.constructTopic("bell/button/$settable"), "true").set_retain().set_qos(1));
     client.publish(MQTT::Publish(obj.constructTopic("bell/button/$retained"), "false").set_retain().set_qos(1));
     client.publish(MQTT::Publish(obj.constructTopic("bell/button/$datatype"), "boolean").set_retain().set_qos(1));  
-
-  // set device to ready
-    client.publish(MQTT::Publish(obj.constructTopic("$state"), "ready").set_retain().set_qos(1));  
   }
 }
 
@@ -149,38 +134,4 @@ void initSubscribe() {
     // subscribe listen
     client.subscribe(MQTT::Subscribe().add_topic(obj.constructTopic("bell/button/set"),2));  
   }
-}
-
-void saveConfig() {
-  EEPROM.begin(SETTING_SIZE);
-  EEPROM.write(0,storage.code);
-  for (int i=0;i<32;i++) EEPROM.write(i+1,storage.wifi_ssid[i]); //start from byte 1 for ssid
-  for (int i=0;i<64;i++) EEPROM.write(i+33,storage.wifi_pass[i]); //start from byte 33 for pass
-  EEPROM.commit();
-  EEPROM.end();
-}
-
-void loadConfig() {
-  EEPROM.begin(SETTING_SIZE);
-  bool def = EEPROM.read(SETTING_START)!= SETTING_CODE;
-  if (def) {
-    EEPROM.end();
-    if (DEBUG) SerialDEBUG.println(F("Custom setting not valid. Set to default.."));
-    strcpy(storage.wifi_ssid,"");
-    strcpy(storage.wifi_pass,"");
-    storage.code = SETTING_CODE;
-    saveConfig();
-  } else {
-    for (int i=0;i<32;i++) storage.wifi_ssid[i] = EEPROM.read(i+1); //start from byte 1 for ssid
-    for (int i=0;i<64;i++) storage.wifi_pass[i] = EEPROM.read(i+33); //start from byte 33 for pass
-    EEPROM.end();
-  }
-}
-
-void clearConfig() {
-  EEPROM.begin(SETTING_SIZE);
-  for (unsigned int i=0;i<SETTING_SIZE;i++) { //clear EEPROM
-    EEPROM.write(i, 0);
-  }
-  EEPROM.end();
 }
