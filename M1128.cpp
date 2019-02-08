@@ -15,17 +15,12 @@ void M1128::devConfig(const char* dev_id, const char* dev_user, const char* dev_
   _dev_pass = dev_pass;
 }
 
-void M1128::wifiConfig(char* st_ssid, char* st_pass) {
-  _wifi_st_ssid = st_ssid;
-  _wifi_st_pass = st_pass;
-}
-
-void M1128::wifiConfigAP(const char* ap_ssid, const char* ap_pass) {
+void M1128::wifiConfig(const char* ap_ssid, const char* ap_pass) {
   _wifi_ap_ssid = ap_ssid;
   _wifi_ap_pass = ap_pass;
 }
 
-void M1128::wifiConfigAP(const char* ap_ssid, const char* ap_pass, IPAddress localip, IPAddress gateway, IPAddress subnet) {
+void M1128::wifiConfig(const char* ap_ssid, const char* ap_pass, IPAddress localip, IPAddress gateway, IPAddress subnet) {
   _wifi_ap_ssid = ap_ssid;
   _wifi_ap_pass = ap_pass;
   _wifi_ap_localip = localip;
@@ -55,8 +50,7 @@ void M1128::loop() {
   if (WiFi.status() != WL_CONNECTED) {
     WiFi.reconnect();
     _wifi_ap_server.handleClient();    
-  }
-  else _mqttConnect();
+  } else _mqttConnect();
   _checkResetButton();
 }
 
@@ -111,8 +105,8 @@ void M1128::_initNetwork() {
   SPIFFS.begin();
   pinMode(pinReset, INPUT_PULLUP);
   _retrieveDeviceId();
-  _checkResetButton();
   if (_wifiConnect()) {
+    _checkResetButton();
     if (wifiClientSecure!=NULL) {
       if (SPIFFS.exists(MQTT_PATH_CA)) {
         File ca = SPIFFS.open(MQTT_PATH_CA, "r");
@@ -164,14 +158,19 @@ void M1128::_checkResetButton() {
 
 bool M1128::_wifiConnect() {
   bool res = false;
-  if (WiFi.status() != WL_CONNECTED && strlen(_wifi_st_ssid)>0 && strlen(_wifi_st_pass)>0) {
-    if (_serialDebug) {
-      _serialDebug->print(F("Connecting to "));
-      _serialDebug->print(_wifi_st_ssid);
-      _serialDebug->println(F("..."));    
-    }
+  if (WiFi.status() != WL_CONNECTED) {
     WiFi.mode(WIFI_STA);
-    WiFi.begin(_wifi_st_ssid,_wifi_st_pass);
+    if (strlen(_wifi_st_ssid)>0 && strlen(_wifi_st_pass)>0) {
+      WiFi.begin(_wifi_st_ssid, _wifi_st_pass);
+      if (_serialDebug) {
+        _serialDebug->print(F("Connecting to "));
+        _serialDebug->print(_wifi_st_ssid);
+        _serialDebug->println(F("..."));
+      }
+    } else {
+      WiFi.begin();
+      if (_serialDebug) _serialDebug->println(F("Connecting to the last WiFi setting.."));
+    }
     if (WiFi.waitForConnectResult() == WL_CONNECTED) {
       res = true;
       if (_serialDebug) {
@@ -179,8 +178,8 @@ bool M1128::_wifiConnect() {
         _serialDebug->print(F("My Device Id: "));
         _serialDebug->println(myId());
         _serialDebug->print(F("Local IP Address: "));
-        _serialDebug->println(WiFi.localIP());   
-      }    
+        _serialDebug->println(WiFi.localIP());
+      }
     }
   }
   return res;
@@ -237,16 +236,18 @@ String M1128::_getContentType(String filename){
 
 void M1128::_handleWifiConfig() {
   if (_wifi_ap_server.hasArg("ssid") && _wifi_ap_server.hasArg("password")) {
-    strcpy(_wifi_st_ssid,_wifi_ap_server.arg("ssid").c_str());
-    strcpy(_wifi_st_pass,_wifi_ap_server.arg("password").c_str());
+    strcpy(_wifi_st_ssid, _wifi_ap_server.arg("ssid").c_str());
+    strcpy(_wifi_st_pass, _wifi_ap_server.arg("password").c_str());
     if (_serialDebug) {
       _serialDebug->println(F("New WIFI Configuration received:"));
       _serialDebug->print(F("SSID: "));
-      _serialDebug->println(_wifi_st_ssid);        
+      _serialDebug->println(_wifi_st_ssid);
       _serialDebug->print(F("Password: "));
-      _serialDebug->println(_wifi_st_pass);        
+      _serialDebug->println(_wifi_st_pass);
     }
     _wifi_ap_server.send(200);
+    WiFi.softAPdisconnect(true);
+    _wifiConnect();
     _onWifiConfigChanged = true;
   } else _handleFileRead(_wifi_ap_server.uri());
 }

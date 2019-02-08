@@ -43,9 +43,8 @@ class M1128 {
     void restart();
     void loop();
     void devConfig(const char* dev_id, const char* dev_user, const char* dev_pass);
-    void wifiConfig(char* ssid, char* pass);
-    void wifiConfigAP(const char* ap_ssid, const char* ap_pass);
-    void wifiConfigAP(const char* ap_ssid, const char* ap_pass, IPAddress localip, IPAddress gateway, IPAddress subnet);
+    void wifiConfig(const char* ap_ssid, const char* ap_pass);
+    void wifiConfig(const char* ap_ssid, const char* ap_pass, IPAddress localip, IPAddress gateway, IPAddress subnet);
     const char* myId();
     void setId(const char* id);
     const char* constructTopic(const char* topic);
@@ -65,8 +64,8 @@ class M1128 {
     const char* _dev_pass;    
     const char* _wifi_ap_ssid;
     const char* _wifi_ap_pass;
-    char* _wifi_st_ssid;
-    char* _wifi_st_pass;
+    char _wifi_st_ssid[33];
+    char _wifi_st_pass[65];
     bool _mqttCleanSession = false;
     bool _onWifiConfigChanged = false;
     bool _onReset = false;
