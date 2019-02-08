@@ -30,7 +30,7 @@ void setup() {
     while (!SerialDEBUG);
     SerialDEBUG.println("Initializing..");
   }
-  client.set_callback(callback);
+  client.set_callback(callbackOnReceive);
   pinMode(DEVICE_PIN_BUTTON_INPUT,INPUT_PULLUP);
   pinMode(DEVICE_PIN_BUTTON_OUTPUT,OUTPUT);
   digitalWrite(DEVICE_PIN_BUTTON_OUTPUT, DEVICE_PIN_BUTTON_DEFSTATE);
@@ -39,12 +39,14 @@ void setup() {
   obj.pinReset = 3;
   obj.devConfig(DEVELOPER_ID,DEVELOPER_USER,DEVELOPER_PASS);
   obj.wifiConfig(WIFI_DEFAULT_SSID,WIFI_DEFAULT_PASS);
+  obj.onReset = callbackOnReset;
+  obj.onReconnect = callbackOnReconnect;
+  obj.onWiFiConfigChanged = callbackOnWiFiConfigChanged;
   ESP.wdtEnable(8000);
   obj.init(client,true,SerialDEBUG); //pass client, set clean_session=true, use debug.
   if (obj.isReady && client.connected()) {
     initPublish();    
     initSubscribe();
-    publishState("ready");
   }
   delay(10);
 }
@@ -53,21 +55,9 @@ void loop() {
   ESP.wdtFeed();
   obj.loop();
   checkBellButton();
-  if (obj.onReconnect()) {
-    initSubscribe();
-    publishState("ready");
-  }
-  if (obj.onReset()) {
-    delay(1000);
-    obj.restart();
-  }
-  if (obj.onWiFiConfigChanged()) {
-    delay(1000);
-    obj.restart();
-  }
 }
 
-void callback(const MQTT::Publish& pub) {
+void callbackOnReceive(const MQTT::Publish& pub) {
   if (DEBUG) {
     SerialDEBUG.print(F("Receiving topic: "));
     SerialDEBUG.println(pub.topic());
@@ -77,6 +67,18 @@ void callback(const MQTT::Publish& pub) {
   if (pub.topic()==obj.constructTopic("reset") && pub.payload_string()=="true") obj.reset();
   else if (pub.topic()==obj.constructTopic("restart") && pub.payload_string()=="true") obj.restart();
   else if (pub.topic()==obj.constructTopic("bell/button/set") && pub.payload_string()=="true") bellMe();
+}
+
+void callbackOnReconnect() {
+  initSubscribe();
+}
+
+void callbackOnWiFiConfigChanged() {
+  obj.restart();
+}
+
+void callbackOnReset() {
+  obj.restart();
 }
 
 void checkBellButton() {
@@ -96,7 +98,7 @@ void bellMe() {
 }
 
 void publishState(const char* state) {
-  client.publish(MQTT::Publish(obj.constructTopic("$state"), state).set_retain().set_qos(1));  
+  if (client.connected()) client.publish(MQTT::Publish(obj.constructTopic("$state"), state).set_retain().set_qos(1));  
 }
 
 void initPublish() {
@@ -134,4 +136,5 @@ void initSubscribe() {
     // subscribe listen
     client.subscribe(MQTT::Subscribe().add_topic(obj.constructTopic("bell/button/set"),2));  
   }
+  publishState("ready");
 }
