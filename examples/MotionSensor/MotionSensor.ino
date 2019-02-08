@@ -5,18 +5,20 @@
 #define SETTING_CODE 78 //0-255 range (a byte)
 #define SETTING_SIZE 128
 
+#define SECURE true
 #define DEBUG true
 #define DEBUG_BAUD 9600
 
-#define DEVELOPER_ID "your developer id"
-#define DEVELOPER_USER "your developer API username"
-#define DEVELOPER_PASS "your developer API password"
+#define DEVELOPER_ID "1"
+#define DEVELOPER_USER "dmI0OkvoFRLRzHu3J3tEWQbIXQwDeF9q"
+#define DEVELOPER_PASS "dyUiAb1cjkS8FRrokTXxtY1s4DUmOJsa"
 
 #define WIFI_DEFAULT_SSID "SmartMotion"
 #define WIFI_DEFAULT_PASS "abcd1234"
 
 WiFiClient wclient;
-PubSubClient client(wclient, MQTT_BROKER_HOST, MQTT_BROKER_PORT);
+WiFiClientSecure wclientSecure;
+PubSubClient client(SECURE?wclientSecure:wclient, MQTT_BROKER_HOST, SECURE?MQTT_BROKER_PORT_TLS:MQTT_BROKER_PORT);
 HardwareSerial SerialDEBUG = Serial;
 M1128 obj;
 
@@ -40,6 +42,7 @@ void setup() {
   loadConfig();
   pinMode(3, FUNCTION_3);
   obj.pinReset = 3;
+  if (SECURE) obj.wifiClientSecure = &wclientSecure;  
   obj.devConfig(DEVELOPER_ID,DEVELOPER_USER,DEVELOPER_PASS);
   obj.wifiConfig(storage.wifi_ssid,storage.wifi_pass);
   obj.wifiConfigAP(WIFI_DEFAULT_SSID,WIFI_DEFAULT_PASS);
