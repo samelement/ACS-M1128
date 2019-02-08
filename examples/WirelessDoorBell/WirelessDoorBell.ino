@@ -5,12 +5,13 @@
 #define SETTING_CODE 78 //0-255 range (a byte)
 #define SETTING_SIZE 128
 
+#define SECURE true
 #define DEBUG true
 #define DEBUG_BAUD 9600
 
 #define DEVELOPER_ID "your developer id"
-#define DEVELOPER_USER "your developer api username"
-#define DEVELOPER_PASS "your developer api password"
+#define DEVELOPER_USER "your developer API username"
+#define DEVELOPER_PASS "your developer API password"
 
 #define WIFI_DEFAULT_SSID "SmartBell"
 #define WIFI_DEFAULT_PASS "abcd1234"
@@ -20,7 +21,8 @@
 #define DEVICE_PIN_BUTTON_OUTPUT 2 // pin GPio2 for output
 
 WiFiClient wclient;
-PubSubClient client(wclient, MQTT_BROKER_HOST, MQTT_BROKER_PORT);
+WiFiClientSecure wclientSecure;
+PubSubClient client(SECURE?wclientSecure:wclient, MQTT_BROKER_HOST, SECURE?MQTT_BROKER_PORT_TLS:MQTT_BROKER_PORT);
 HardwareSerial SerialDEBUG = Serial;
 M1128 obj;
 
@@ -50,6 +52,7 @@ void setup() {
   pinMode(DEVICE_PIN_BUTTON_OUTPUT,OUTPUT);
   digitalWrite(DEVICE_PIN_BUTTON_OUTPUT, DEVICE_PIN_BUTTON_DEFSTATE);
   pinMode(3, FUNCTION_3);
+  if (SECURE) obj.wifiClientSecure = &wclientSecure;
   obj.pinReset = 3;
   obj.devConfig(DEVELOPER_ID,DEVELOPER_USER,DEVELOPER_PASS);
   obj.wifiConfig(storage.wifi_ssid,storage.wifi_pass);
