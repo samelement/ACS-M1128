@@ -43,10 +43,6 @@ void M1128::init(PubSubClient &mqttClient, bool cleanSession, Stream &serialDebu
 }
 
 void M1128::loop() {
-  _onWifiConfigChanged = false;
-  _onReset = false;
-  _onReconnect = false;
-  
   if (WiFi.status() != WL_CONNECTED) {
     WiFi.reconnect();
     _wifi_ap_server.handleClient();    
@@ -80,25 +76,15 @@ void M1128::reset() {
   _mqttClient->publish(MQTT::Publish(constructTopic("$state"), "disconnected").set_retain().set_qos(1));
   if (_serialDebug) _serialDebug->println("Restoring to factory setting..");
   WiFi.disconnect(true);
-  _onReset = true;
+  delay(1000);
+  if (onReset!=NULL) onReset();
 }
 
 void M1128::restart() {
   _mqttClient->publish(MQTT::Publish(constructTopic("$state"), "disconnected").set_retain().set_qos(1));
   if (_serialDebug) _serialDebug->println("Restarting..");
+  delay(1000);
   ESP.restart();
-}
-
-bool M1128::onWiFiConfigChanged() {
-  return _onWifiConfigChanged;  
-}
-
-bool M1128::onReset() {
-  return _onReset;  
-}
-
-bool M1128::onReconnect() {
-  return _onReconnect;  
 }
 
 void M1128::_initNetwork() {
@@ -128,7 +114,6 @@ void M1128::_initNetwork() {
 
 bool M1128::_mqttConnect() {
   bool res = false;
-  _onReconnect = false;
   if (!_mqttClient->connected()) {
     if (_serialDebug) _serialDebug->println(F("Connecting to MQTT server"));
     MQTT::Connect con(myId());
@@ -138,13 +123,15 @@ bool M1128::_mqttConnect() {
     con.set_keepalive(MQTT_KEEPALIVE);
     if (_mqttClient->connect(con)) {
       if (_serialDebug) _serialDebug->println(F("Connected to MQTT server"));
-      res = true;
-      _onReconnect = true;
+      if (onReconnect!=NULL) onReconnect();     
     } else {
       if (_serialDebug) _serialDebug->println(F("Could not connect to MQTT server"));   
     }
   }
-  if (_mqttClient->connected()) _mqttClient->loop();  
+  if (_mqttClient->connected()) {
+    _mqttClient->loop();  
+    res = true; 
+  }
   return res;
 }
 
@@ -248,7 +235,7 @@ void M1128::_handleWifiConfig() {
     _wifi_ap_server.send(200);
     WiFi.softAPdisconnect(true);
     _wifiConnect();
-    _onWifiConfigChanged = true;
+    if (onWiFiConfigChanged!=NULL) onWiFiConfigChanged();
   } else _handleFileRead(_wifi_ap_server.uri());
 }
 

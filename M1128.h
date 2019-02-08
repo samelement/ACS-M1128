@@ -29,6 +29,8 @@ using namespace axTLS;
 
 #define PIN_RESET 3
 
+typedef void (*callbackFunction) ();
+
 class M1128 {
   public:
     M1128();
@@ -38,6 +40,9 @@ class M1128 {
     void init(PubSubClient &mqttClient, bool cleanSession, Stream &serialDebug);
     bool isReady = false;
     WiFiClientSecure *wifiClientSecure;
+    callbackFunction onReset;
+    callbackFunction onReconnect;
+    callbackFunction onWiFiConfigChanged;
 
     void reset();
     void restart();
@@ -48,9 +53,6 @@ class M1128 {
     const char* myId();
     void setId(const char* id);
     const char* constructTopic(const char* topic);
-    bool onWiFiConfigChanged();
-    bool onReconnect();
-    bool onReset();
   private:   
     HardwareSerial *_serialBee;
     Stream *_serialDebug;
@@ -67,9 +69,6 @@ class M1128 {
     char _wifi_st_ssid[33];
     char _wifi_st_pass[65];
     bool _mqttCleanSession = false;
-    bool _onWifiConfigChanged = false;
-    bool _onReset = false;
-    bool _onReconnect = false;
     
     uint8_t _pinResetButtonLast = HIGH;
     char _topic_buf[PAYLOAD_BUFFER_SIZE];
