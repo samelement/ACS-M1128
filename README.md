@@ -1,4 +1,4 @@
-# M1128
+# ACS-M1128 SAM Element Access Connectivity
 WiFi connectivity module for SAM Element.
 
 Install if necessary:
