@@ -28,32 +28,24 @@ void setup() {
   if (SECURE) obj.wifiClientSecure = &wclientSecure;  
   obj.devConfig(DEVELOPER_ID,DEVELOPER_USER,DEVELOPER_PASS);
   obj.wifiConfig(WIFI_DEFAULT_SSID,WIFI_DEFAULT_PASS);
-  obj.onReset = callbackOnReset;
-  obj.onWiFiConfigChanged = callbackOnWiFiConfigChanged;  
+  obj.onConnect = callbackOnConnect;
   ESP.wdtEnable(8000);  
   obj.init(client,true,SerialDEBUG); //pass client, set clean_session=true, use debug.
-  if (obj.isReady && client.connected()) {
-    client.publish(MQTT::Publish(obj.constructTopic("sensor/motion"), "true").set_retain(false).set_qos(1)); 
-    initPublish();    
-    client.publish(MQTT::Publish(obj.constructTopic("sensor/motion"), "true").set_retain(false).set_qos(1)); 
-    client.publish(MQTT::Publish(obj.constructTopic("$state"), "sleeping").set_retain().set_qos(1)); 
-    ESP.deepSleep(0);
-  }
   delay(10);
 }
 
 void loop() {
   yield();
+  ESP.wdtFeed();
   if (!obj.isReady) obj.loop();
 }
 
-void callbackOnWiFiConfigChanged() {
-  obj.restart();
-}
-
-void callbackOnReset() {
-  delay(2000);
-  obj.restart();
+void callbackOnConnect() {
+  client.publish(MQTT::Publish(obj.constructTopic("sensor/motion"), "true").set_retain(false).set_qos(1)); 
+  initPublish();    
+  client.publish(MQTT::Publish(obj.constructTopic("sensor/motion"), "true").set_retain(false).set_qos(1)); 
+  client.publish(MQTT::Publish(obj.constructTopic("$state"), "sleeping").set_retain().set_qos(1)); 
+  ESP.deepSleep(0);
 }
 
 void initPublish() { 
