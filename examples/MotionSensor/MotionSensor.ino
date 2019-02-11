@@ -43,7 +43,6 @@ void loop() {
 void callbackOnConnect() {
   client.publish(MQTT::Publish(obj.constructTopic("sensor/motion"), "true").set_retain(false).set_qos(1)); 
   initPublish();    
-  client.publish(MQTT::Publish(obj.constructTopic("sensor/motion"), "true").set_retain(false).set_qos(1)); 
   client.publish(MQTT::Publish(obj.constructTopic("$state"), "sleeping").set_retain().set_qos(1)); 
   ESP.deepSleep(0);
 }
