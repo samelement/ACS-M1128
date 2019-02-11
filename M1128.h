@@ -41,6 +41,7 @@ class M1128 {
     bool isReady = false;
     WiFiClientSecure *wifiClientSecure;
     callbackFunction onReset;
+    callbackFunction onConnect;    
     callbackFunction onReconnect;
     callbackFunction onWiFiConfigChanged;
 
@@ -66,18 +67,18 @@ class M1128 {
     const char* _dev_pass;    
     const char* _wifi_ap_ssid;
     const char* _wifi_ap_pass;
-    char _wifi_st_ssid[33];
-    char _wifi_st_pass[65];
     bool _mqttCleanSession = false;
     
     uint8_t _pinResetButtonLast = HIGH;
     char _topic_buf[PAYLOAD_BUFFER_SIZE];
     char _myAddr[33];
     char _custAddr[33];
+    bool _startWiFi = false;
 
     void _initNetwork();
-    void _checkResetButton();
+    bool _checkResetButton();
     bool _wifiConnect();
+    bool _wifiConnect(const char* ssid, const char* password);
     bool _wifiSoftAP();
     bool _mqttConnect();
     void _retrieveDeviceId();

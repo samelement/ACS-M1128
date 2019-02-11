@@ -29,12 +29,16 @@ void M1128::wifiConfig(const char* ap_ssid, const char* ap_pass, IPAddress local
 }
 
 void M1128::init(PubSubClient &mqttClient, bool cleanSession) {
+  SPIFFS.begin();
+  pinMode(pinReset, INPUT_PULLUP);
   _mqttClient = &mqttClient;
   _mqttCleanSession = cleanSession;
   _initNetwork();
 }
 
 void M1128::init(PubSubClient &mqttClient, bool cleanSession, Stream &serialDebug) {
+  SPIFFS.begin();
+  pinMode(pinReset, INPUT_PULLUP);  
   _serialDebug = &serialDebug;
   _serialDebug->flush();
   _mqttClient = &mqttClient;
@@ -77,6 +81,7 @@ void M1128::reset() {
   if (_serialDebug) _serialDebug->println("Restoring to factory setting..");
   WiFi.disconnect(true);
   delay(1000);
+  _initNetwork();
   if (onReset!=NULL) onReset();
 }
 
@@ -88,23 +93,20 @@ void M1128::restart() {
 }
 
 void M1128::_initNetwork() {
-  SPIFFS.begin();
-  pinMode(pinReset, INPUT_PULLUP);
   _retrieveDeviceId();
   if (_wifiConnect()) {
-    _checkResetButton();
-    if (wifiClientSecure!=NULL) {
-      if (SPIFFS.exists(MQTT_PATH_CA)) {
-        File ca = SPIFFS.open(MQTT_PATH_CA, "r");
-        if (ca && wifiClientSecure->loadCACert(ca)) if (_serialDebug) _serialDebug->println(F("CA Certificate loaded..!"));
-        else if (_serialDebug) _serialDebug->println(F("CA Certificate load failed..!"));          
-        ca.close();
+    if (!_checkResetButton()) {
+      if (wifiClientSecure!=NULL) {
+        if (SPIFFS.exists(MQTT_PATH_CA)) {
+          File ca = SPIFFS.open(MQTT_PATH_CA, "r");
+          if (ca && wifiClientSecure->loadCACert(ca)) if (_serialDebug) _serialDebug->println(F("CA Certificate loaded..!"));
+          else if (_serialDebug) _serialDebug->println(F("CA Certificate load failed..!"));          
+          ca.close();
+        }
       }
+      _mqttConnect();    
     }
-    _mqttConnect();
-    isReady = true;
-  }
-  else _wifiSoftAP();
+  } else _wifiSoftAP();
 
   if (_serialDebug) {
     if (isReady) _serialDebug->println(F("M1128 initialization succeed!"));
@@ -112,63 +114,58 @@ void M1128::_initNetwork() {
   }
 }
 
-bool M1128::_mqttConnect() {
+bool M1128::_checkResetButton() {
   bool res = false;
-  if (!_mqttClient->connected()) {
-    if (_serialDebug) _serialDebug->println(F("Connecting to MQTT server"));
-    MQTT::Connect con(myId());
-    con.set_clean_session(_mqttCleanSession);
-    con.set_will(constructTopic(MQTT_WILL_TOPIC), MQTT_WILL_VALUE, MQTT_WILL_QOS, MQTT_WILL_RETAIN);
-    con.set_auth(_dev_user, _dev_pass);
-    con.set_keepalive(MQTT_KEEPALIVE);
-    if (_mqttClient->connect(con)) {
-      if (_serialDebug) _serialDebug->println(F("Connected to MQTT server"));
-      if (onReconnect!=NULL) onReconnect();     
-    } else {
-      if (_serialDebug) _serialDebug->println(F("Could not connect to MQTT server"));   
-    }
-  }
-  if (_mqttClient->connected()) {
-    _mqttClient->loop();  
-    res = true; 
-  }
-  return res;
-}
-
-void M1128::_checkResetButton() {
   uint8_t pinResetButtonNow = digitalRead(pinReset);
   if (_pinResetButtonLast == HIGH && pinResetButtonNow == LOW) {
     reset();
+    res = true;
   }
   _pinResetButtonLast = pinResetButtonNow;
+  return res;
 }
 
 bool M1128::_wifiConnect() {
+  return _wifiConnect(NULL,NULL);
+}
+  
+bool M1128::_wifiConnect(const char* ssid, const char* password) {
   bool res = false;
-  if (WiFi.status() != WL_CONNECTED) {
-    WiFi.mode(WIFI_STA);
-    if (strlen(_wifi_st_ssid)>0 && strlen(_wifi_st_pass)>0) {
-      WiFi.begin(_wifi_st_ssid, _wifi_st_pass);
-      if (_serialDebug) {
-        _serialDebug->print(F("Connecting to "));
-        _serialDebug->print(_wifi_st_ssid);
-        _serialDebug->println(F("..."));
-      }
-    } else {
-      WiFi.begin();
-      if (_serialDebug) _serialDebug->println(F("Connecting to the last WiFi setting.."));
+  WiFi.mode(WIFI_STA);
+  if (ssid!=NULL && password!=NULL) {
+    _startWiFi = true;
+    if (_serialDebug) {
+      _serialDebug->println(F("Connecting to WiFi setting:"));
+      _serialDebug->print(F("SSID: "));
+      _serialDebug->println(ssid);
+      _serialDebug->print(F("Password: "));
+      _serialDebug->println(password);
     }
-    if (WiFi.waitForConnectResult() == WL_CONNECTED) {
-      res = true;
-      if (_serialDebug) {
-        _serialDebug->println(F("WiFi connected"));
-        _serialDebug->print(F("My Device Id: "));
-        _serialDebug->println(myId());
-        _serialDebug->print(F("Local IP Address: "));
-        _serialDebug->println(WiFi.localIP());
-      }
+    if (WiFi.status() == WL_CONNECTED) WiFi.disconnect(true);
+    WiFi.begin(ssid,password);
+    if (WiFi.waitForConnectResult() == WL_CONNECTED) res = true;
+  } else if (WiFi.status() != WL_CONNECTED) {
+    _startWiFi = true;
+    if (_serialDebug) _serialDebug->println(F("Connecting to the last WiFi setting..."));
+    WiFi.begin();
+    if (WiFi.waitForConnectResult() == WL_CONNECTED) res=true;
+  } else if (WiFi.status() == WL_CONNECTED) {
+    res = true;
+  }
+
+  if (_serialDebug) {
+    _serialDebug->print(F("My Device Id: "));
+    _serialDebug->println(myId());
+    if (res) {
+      _serialDebug->println(F("WiFi connected"));
+      _serialDebug->print(F("Local IP Address: "));
+      _serialDebug->println(WiFi.localIP());    
+    } else {
+      _serialDebug->println(F("WiFi connect failed..!"));      
     }
   }
+
+  isReady = res;
   return res;
 }
 
@@ -199,6 +196,32 @@ bool M1128::_wifiSoftAP() {
   return res;
 }
 
+bool M1128::_mqttConnect() {
+  bool res = false;
+  if (!_mqttClient->connected()) {
+    if (_serialDebug) _serialDebug->println(F("Connecting to MQTT server"));
+    MQTT::Connect con(myId());
+    con.set_clean_session(_mqttCleanSession);
+    con.set_will(constructTopic(MQTT_WILL_TOPIC), MQTT_WILL_VALUE, MQTT_WILL_QOS, MQTT_WILL_RETAIN);
+    con.set_auth(_dev_user, _dev_pass);
+    con.set_keepalive(MQTT_KEEPALIVE);
+    if (_mqttClient->connect(con)) {
+      if (_serialDebug) _serialDebug->println(F("Connected to MQTT server"));
+      if (_startWiFi) {
+        if (onConnect!=NULL) onConnect(); 
+        _startWiFi = false;
+      } else if (onReconnect!=NULL) onReconnect();     
+    } else {
+      if (_serialDebug) _serialDebug->println(F("Could not connect to MQTT server"));   
+    }
+  }
+  if (_mqttClient->connected()) {
+    _mqttClient->loop();  
+    res = true; 
+  }
+  return res;
+}
+
 void M1128::_retrieveDeviceId() {
   String addr = String(ESP.getChipId());
   addr.toCharArray(_myAddr,32);
@@ -223,18 +246,16 @@ String M1128::_getContentType(String filename){
 
 void M1128::_handleWifiConfig() {
   if (_wifi_ap_server.hasArg("ssid") && _wifi_ap_server.hasArg("password")) {
-    strcpy(_wifi_st_ssid, _wifi_ap_server.arg("ssid").c_str());
-    strcpy(_wifi_st_pass, _wifi_ap_server.arg("password").c_str());
     if (_serialDebug) {
       _serialDebug->println(F("New WIFI Configuration received:"));
       _serialDebug->print(F("SSID: "));
-      _serialDebug->println(_wifi_st_ssid);
+      _serialDebug->println(_wifi_ap_server.arg("ssid").c_str());
       _serialDebug->print(F("Password: "));
-      _serialDebug->println(_wifi_st_pass);
+      _serialDebug->println(_wifi_ap_server.arg("password").c_str());
     }
     _wifi_ap_server.send(200);
     WiFi.softAPdisconnect(true);
-    _wifiConnect();
+    if (_wifiConnect(_wifi_ap_server.arg("ssid").c_str(),_wifi_ap_server.arg("password").c_str())) _mqttConnect();
     if (onWiFiConfigChanged!=NULL) onWiFiConfigChanged();
   } else _handleFileRead(_wifi_ap_server.uri());
 }
