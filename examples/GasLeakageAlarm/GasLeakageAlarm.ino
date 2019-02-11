@@ -36,15 +36,10 @@ void setup() {
   if (SECURE) obj.wifiClientSecure = &wclientSecure;    
   obj.devConfig(DEVELOPER_ID,DEVELOPER_USER,DEVELOPER_PASS);
   obj.wifiConfig(WIFI_DEFAULT_SSID,WIFI_DEFAULT_PASS);
-  obj.onReset = callbackOnReset;
+  obj.onConnect = callbackOnConnect;
   obj.onReconnect = callbackOnReconnect;
-  obj.onWiFiConfigChanged = callbackOnWiFiConfigChanged;
   ESP.wdtEnable(8000);      
   obj.init(client,true,SerialDEBUG); //pass client, set clean_session=true, use debug.
-  if (obj.isReady && client.connected()) {
-    initPublish();    
-    initSubscribe();
-  }
   delay(10);
 }
 
@@ -65,16 +60,13 @@ void callbackOnReceive(const MQTT::Publish& pub) {
   else if (pub.topic()==obj.constructTopic("restart") && pub.payload_string()=="true") obj.restart();
 }
 
-void callbackOnReconnect() {
+void callbackOnConnect() {
+  initPublish();    
   initSubscribe();
 }
 
-void callbackOnWiFiConfigChanged() {
-  obj.restart();
-}
-
-void callbackOnReset() {
-  obj.restart();
+void callbackOnReconnect() {
+  initSubscribe();
 }
 
 void checkSensor() {
