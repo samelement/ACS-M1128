@@ -104,13 +104,12 @@ void M1128::_initNetwork() {
           ca.close();
         }
       }
+      if (_serialDebug) _serialDebug->println(F("M1128 initialization succeed!"));
       _mqttConnect();    
     }
-  } else _wifiSoftAP();
-
-  if (_serialDebug) {
-    if (isReady) _serialDebug->println(F("M1128 initialization succeed!"));
-    else _serialDebug->println(F("M1128 initialization failed!"));
+  } else {
+    _wifiSoftAP();
+    if (_serialDebug) _serialDebug->println(F("M1128 initialization failed!"));
   }
 }
 
