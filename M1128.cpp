@@ -33,7 +33,7 @@ void M1128::init(PubSubClient &mqttClient, bool cleanSession) {
   pinMode(pinReset, INPUT_PULLUP);
   _mqttClient = &mqttClient;
   _mqttCleanSession = cleanSession;
-  _initNetwork();
+  if (!_checkResetButton()) _initNetwork();
 }
 
 void M1128::init(PubSubClient &mqttClient, bool cleanSession, Stream &serialDebug) {
@@ -43,7 +43,7 @@ void M1128::init(PubSubClient &mqttClient, bool cleanSession, Stream &serialDebu
   _serialDebug->flush();
   _mqttClient = &mqttClient;
   _mqttCleanSession = cleanSession;
-  _initNetwork();
+  if (!_checkResetButton()) _initNetwork();
 }
 
 void M1128::loop() {
@@ -95,18 +95,16 @@ void M1128::restart() {
 void M1128::_initNetwork() {
   _retrieveDeviceId();
   if (_wifiConnect()) {
-    if (!_checkResetButton()) {
-      if (wifiClientSecure!=NULL) {
-        if (SPIFFS.exists(MQTT_PATH_CA)) {
-          File ca = SPIFFS.open(MQTT_PATH_CA, "r");
-          if (ca && wifiClientSecure->loadCACert(ca)) if (_serialDebug) _serialDebug->println(F("CA Certificate loaded..!"));
-          else if (_serialDebug) _serialDebug->println(F("CA Certificate load failed..!"));          
-          ca.close();
-        }
+    if (wifiClientSecure!=NULL) {
+      if (SPIFFS.exists(MQTT_PATH_CA)) {
+        File ca = SPIFFS.open(MQTT_PATH_CA, "r");
+        if (ca && wifiClientSecure->loadCACert(ca)) if (_serialDebug) _serialDebug->println(F("CA Certificate loaded..!"));
+        else if (_serialDebug) _serialDebug->println(F("CA Certificate load failed..!"));          
+        ca.close();
       }
-      if (_serialDebug) _serialDebug->println(F("M1128 initialization succeed!"));
-      _mqttConnect();    
     }
+    if (_serialDebug) _serialDebug->println(F("M1128 initialization succeed!"));
+    _mqttConnect();    
   } else {
     _wifiSoftAP();
     if (_serialDebug) _serialDebug->println(F("M1128 initialization failed!"));
