@@ -52,6 +52,13 @@ void M1128::loop() {
     _wifi_ap_server.handleClient();    
   } else _mqttConnect();
   _checkResetButton();
+  if (_softAPStartMillis>0 && softAPtoSleep > 0) { // if WiFi in SoftAP mode
+    _softAPCurrentMillis = millis();
+    if ((_softAPCurrentMillis - _softAPStartMillis) > softAPtoSleep) {
+      if (_serialDebug) _serialDebug->println(F("Exceeded wait time, going to deep sleep.."));
+      ESP.deepSleep(0);
+    }
+  }
 }
 
 const char* M1128::constructTopic(const char* topic) {
@@ -78,7 +85,7 @@ void M1128::setId(const char* id) {
 
 void M1128::reset() {
   _mqttClient->publish(MQTT::Publish(constructTopic("$state"), "disconnected").set_retain().set_qos(1));
-  if (_serialDebug) _serialDebug->println("Restoring to factory setting..");
+  if (_serialDebug) _serialDebug->println(F("Restoring to factory setting.."));
   WiFi.disconnect(true);
   delay(1000);
   _initNetwork();
@@ -98,7 +105,7 @@ void M1128::_initNetwork() {
     if (wifiClientSecure!=NULL) {
       if (SPIFFS.exists(MQTT_PATH_CA)) {
         File ca = SPIFFS.open(MQTT_PATH_CA, "r");
-        if (ca && wifiClientSecure->loadCACert(ca)) if (_serialDebug) _serialDebug->println(F("CA Certificate loaded..!"));
+        if (ca && wifiClientSecure->loadCACert(ca)) { if (_serialDebug) _serialDebug->println(F("CA Certificate loaded..!")); }
         else if (_serialDebug) _serialDebug->println(F("CA Certificate load failed..!"));          
         ca.close();
       }
@@ -106,8 +113,15 @@ void M1128::_initNetwork() {
     if (_serialDebug) _serialDebug->println(F("M1128 initialization succeed!"));
     _mqttConnect();    
   } else {
-    _wifiSoftAP();
-    if (_serialDebug) _serialDebug->println(F("M1128 initialization failed!"));
+    if (_wifiConnectRetryVal < wifiConnectRetry-1) {
+      if (_serialDebug) _serialDebug->println(F("Trying to connect again..."));
+      _wifiConnectRetryVal++;
+      _initNetwork();
+    } else {
+      _wifiConnectRetryVal = 0;
+      _wifiSoftAP();
+      if (_serialDebug) _serialDebug->println(F("M1128 initialization failed!"));      
+    }
   }
 }
 
@@ -167,6 +181,7 @@ bool M1128::_wifiConnect(const char* ssid, const char* password) {
 }
 
 bool M1128::_wifiSoftAP() {
+  _softAPStartMillis = millis();
   bool res = false;
   if (_serialDebug) {
     _serialDebug->println(F("Setting up default Soft AP.."));        

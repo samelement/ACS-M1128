@@ -28,6 +28,8 @@ using namespace axTLS;
 #define PAYLOAD_BUFFER_SIZE 501
 
 #define PIN_RESET 3
+#define AP_TO_SLEEP 120000 // in ms. 0 is no limit. 
+#define WIFI_RETRY 3
 
 typedef void (*callbackFunction) ();
 
@@ -36,6 +38,8 @@ class M1128 {
     M1128();
 
     uint8_t pinReset = PIN_RESET;
+    uint8_t wifiConnectRetry = WIFI_RETRY;
+    unsigned int softAPtoSleep = AP_TO_SLEEP;
     void init(PubSubClient &mqttClient, bool cleanSession);
     void init(PubSubClient &mqttClient, bool cleanSession, Stream &serialDebug);
     bool isReady = false;
@@ -68,7 +72,10 @@ class M1128 {
     const char* _wifi_ap_ssid;
     const char* _wifi_ap_pass;
     bool _mqttCleanSession = false;
-    
+    uint8_t _wifiConnectRetryVal = 0;
+    unsigned int _softAPStartMillis = 0;
+    unsigned int _softAPCurrentMillis = 0;
+        
     uint8_t _pinResetButtonLast = HIGH;
     char _topic_buf[PAYLOAD_BUFFER_SIZE];
     char _myAddr[33];
