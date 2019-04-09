@@ -114,7 +114,7 @@ void M1128::_initNetwork() {
     _mqttConnect();    
   } else {
     if (_wifiConnectRetryVal < wifiConnectRetry-1) {
-      delay(5000);
+      delay(3000);
       if (_serialDebug) _serialDebug->println(F("Trying to connect again..."));
       _wifiConnectRetryVal++;
       _initNetwork();
