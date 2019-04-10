@@ -28,7 +28,7 @@ using namespace axTLS;
 #define PAYLOAD_BUFFER_SIZE 501
 
 #define PIN_RESET 3
-#define AP_TO_SLEEP 120000 // in ms. 0 is no limit. 
+#define AP_TO_SLEEP 0 // in ms. 0 is no limit. 
 #define WIFI_RETRY 3
 
 typedef void (*callbackFunction) ();
