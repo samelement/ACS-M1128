@@ -25,6 +25,7 @@ void setup() {
   }
   pinMode(3, FUNCTION_3);
   obj.pinReset = 3;
+  obj.softAPtoSleep = 120000;
   if (SECURE) obj.wifiClientSecure = &wclientSecure;  
   obj.devConfig(DEVELOPER_ID,DEVELOPER_USER,DEVELOPER_PASS);
   obj.wifiConfig(WIFI_DEFAULT_SSID,WIFI_DEFAULT_PASS);
