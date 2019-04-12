@@ -41,7 +41,7 @@ M1128 obj;
 ### Initialize objects
 ```sh
 void setup() {
-  // If you want to debug, initialze your SerialDEBUG
+  // If you want to debug, initialize your SerialDEBUG
   SerialDEBUG.begin(DEBUG_BAUD, SERIAL_8N1, SERIAL_TX_ONLY);
   while (!SerialDEBUG);
   SerialDEBUG.println("Initializing..");
