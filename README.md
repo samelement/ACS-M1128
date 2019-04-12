@@ -17,7 +17,7 @@ SAM Element is an IoT platform. Visit our [website](https://www.samelement.com) 
   - Easy to customize WiFi Configuration Interface.
 
 # Version Updates!
----
+
 ## Version 1.0.0:
 * Connect securely to port 8883.
 * TLS supported.
@@ -27,7 +27,7 @@ SAM Element is an IoT platform. Visit our [website](https://www.samelement.com) 
 * Tested with SPIFFSReadServer Version 0.0.4
 
 # How to Use
----
+
 Example connection below is done for ESP8266-01. You may need to made some adjustment for different ESP8266 series.
 ### Define default values
 ```sh
@@ -102,7 +102,7 @@ void loop() {
 ```
 
 # License
----
+
 This code is released under the MIT License.
 
 Arduino IDE is developed and maintained by the Arduino team. The IDE is licensed under GPL.
