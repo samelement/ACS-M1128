@@ -19,12 +19,12 @@ SAM Element is an IoT platform. Visit our [website](https://www.samelement.com) 
 # Version Updates!
 ---
 ## Version 1.0.0:
-> Connect securely to port 8883.
-> TLS supported.
-> AP Mode timeout for low battery powered.
-> Tested with Arduino core for ESP8266 WiFi chip Version 2.5.0-beta3
-> Tested with PubSubClient Version 1.99.2
-> Tested with SPIFFSReadServer Version 0.0.4
+* Connect securely to port 8883.
+* TLS supported.
+* AP Mode timeout for low battery powered.
+* Tested with Arduino core for ESP8266 WiFi chip Version 2.5.0-beta3
+* Tested with PubSubClient Version 1.99.2
+* Tested with SPIFFSReadServer Version 0.0.4
 
 # How to Use
 ---
