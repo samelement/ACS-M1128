@@ -1,4 +1,4 @@
-[![N|Solid](https://app.samelement.com/invitation/images/logo-red-black-240wide.jpg)](https://app.samelement.com/invitation/images/logo-red-black-240wide.jpg)
+[![N|Solid](https://www.samelement.com/img/logo/logo-final-100x100.png)](https://www.samelement.com/img/logo/logo-final-100x100.png)
 # ACS-M1128 SAM Element IoT WiFi Connectivity
 
 SAM Element is an IoT platform. Visit our [website](https://www.samelement.com) to get to know more.
