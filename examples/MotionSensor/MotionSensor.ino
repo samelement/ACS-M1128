@@ -1,6 +1,5 @@
 #include "M1128.h"
 
-#define SECURE true
 #define DEBUG true
 #define DEBUG_BAUD 9600
 
@@ -11,9 +10,8 @@
 #define WIFI_DEFAULT_SSID "SmartMotion"
 #define WIFI_DEFAULT_PASS "abcd1234"
 
-WiFiClient wclient;
 WiFiClientSecure wclientSecure;
-PubSubClient client(SECURE?wclientSecure:wclient, MQTT_BROKER_HOST, SECURE?MQTT_BROKER_PORT_TLS:MQTT_BROKER_PORT);
+PubSubClient client(wclientSecure,MQTT_BROKER_HOST,MQTT_BROKER_PORT_TLS);
 HardwareSerial SerialDEBUG = Serial;
 M1128 obj;
 
@@ -26,7 +24,7 @@ void setup() {
   pinMode(3, FUNCTION_3);
   obj.pinReset = 3;
   obj.softAPtoSleep = 120000;
-  if (SECURE) obj.wifiClientSecure = &wclientSecure;  
+  obj.wifiClientSecure = &wclientSecure;  
   obj.devConfig(DEVELOPER_ID,DEVELOPER_USER,DEVELOPER_PASS);
   obj.wifiConfig(WIFI_DEFAULT_SSID,WIFI_DEFAULT_PASS);
   obj.onConnect = callbackOnConnect;
