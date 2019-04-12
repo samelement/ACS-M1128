@@ -1,6 +1,5 @@
 #include "M1128.h"
 
-#define SECURE true
 #define DEBUG true //true if you want to debug.
 #define DEBUG_BAUD 9600 //debug baud rate
 
@@ -14,9 +13,8 @@
 #define DEVICE_PIN_DEFSTATE LOW //initial/default pin state
 #define DEVICE_PIN_INPUT 0 //GPIO pin input
 
-WiFiClient wclient;
 WiFiClientSecure wclientSecure;
-PubSubClient client(SECURE?wclientSecure:wclient, MQTT_BROKER_HOST, SECURE?MQTT_BROKER_PORT_TLS:MQTT_BROKER_PORT);
+PubSubClient client(wclientSecure,MQTT_BROKER_HOST,MQTT_BROKER_PORT_TLS);
 HardwareSerial SerialDEBUG = Serial;
 M1128 obj;
 
@@ -33,7 +31,7 @@ void setup() {
   pinMode(DEVICE_PIN_INPUT,INPUT);
   pinMode(3, FUNCTION_3);
   obj.pinReset = 3;
-  if (SECURE) obj.wifiClientSecure = &wclientSecure;    
+  obj.wifiClientSecure = &wclientSecure;    
   obj.devConfig(DEVELOPER_ID,DEVELOPER_USER,DEVELOPER_PASS);
   obj.wifiConfig(WIFI_DEFAULT_SSID,WIFI_DEFAULT_PASS);
   obj.onConnect = callbackOnConnect;
