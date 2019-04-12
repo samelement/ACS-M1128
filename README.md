@@ -57,11 +57,17 @@ void setup() {
   SerialDEBUG.println("Initializing..");
   
   pinMode(3, FUNCTION_3); // this will set GPIO3 (RX) to be used as input
-  obj.pinReset = 3; // set the factory reset pin to GPIO3
-  obj.softAPtoSleep = 120000; // Timeout in ms. Default is 0, which means no timeout. 
+  obj.setId("ABCDEXFGH"); // optional to set device serial number, default is retrieved from ESP.getChipId()
+  obj.pinReset = 3; // optional to set the factory reset pin to GPIO3, default is GPIO3
+  obj.wifiConnectRetry = 2; // optional set wifi connect trial before going to AP mode, default is 3
+  obj.softAPtoSleep = 120000; // optional timeout in ms. Default is 0, which means no timeout. 
   obj.wifiClientSecure = &wclientSecure;  
+  
+  // pass your developer details
   obj.devConfig(DEVELOPER_ID,DEVELOPER_USER,DEVELOPER_PASS);
-  obj.wifiConfig(WIFI_DEFAULT_SSID,WIFI_DEFAULT_PASS);
+
+  // pass your default SSID config. Optional params are: IPAddress localip, IPAddress gateway, IPAddress subnet
+  obj.wifiConfig(WIFI_DEFAULT_SSID,WIFI_DEFAULT_PASS); 
   
   obj.onReset =  callbackOnReset; // optional callback
   obj.onConnect = callbackOnConnect; // optional callback
