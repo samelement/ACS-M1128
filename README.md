@@ -16,16 +16,6 @@ SAM Element is an IoT platform. Visit our [website](https://www.samelement.com) 
   - Ready to use some working examples for real application.
   - Easy to customize WiFi Configuration Interface.
 
-# Version Updates!
-
-## Version 1.0.0:
-* Connect securely to port 8883.
-* TLS supported.
-* AP Mode timeout for low battery powered.
-* Tested with Arduino core for ESP8266 WiFi chip Version 2.5.0-beta3
-* Tested with PubSubClient Version 1.99.2
-* Tested with SPIFFSReadServer Version 0.0.4
-
 # How to Use
 
 Example connection below is done for ESP8266-01. You may need to made some adjustment for different ESP8266 series.
