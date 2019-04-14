@@ -64,7 +64,8 @@ void setup() {
   obj.onReconnect = callbackOnReconnect; // optional callback
   obj.onWiFiConfigChanged = callbackOnWiFiConfigChanged; // optional callback
   
-  // triggered only if apTimeout greater than 0ms. if this callback not defined then after timeout will goes to deepsleep 
+  // triggered only if apTimeout greater than 0ms.
+  // if  apTimeout > 0 and this callback is not defined then after timeout will goes to deep sleep.
   obj.onAPTimeout = callbackOnAPTimeout; 
   
   ESP.wdtEnable(8000); // if you wish to enable watchdog
