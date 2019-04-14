@@ -49,8 +49,7 @@ void setup() {
   pinMode(3, FUNCTION_3); // this will set GPIO3 (RX) to be used as input
   obj.setId("ABCDEXFGH"); // optional to set device serial number, default is retrieved from ESP.getChipId()
   obj.pinReset = 3; // optional to set the factory reset pin to GPIO3, default is GPIO3
-  obj.wifiConnectRetry = 2; // optional set wifi connect trial before going to AP mode, default is 3
-  obj.apTimeout = 120000; // optional timeout in ms. Default is 0, which means no timeout. If 0 then callbackOnAPTimeout is not required
+  obj.wifiConnectRetry = 2; // optional set wifi connect trial before going to AP mode, default is 3  
   obj.wifiClientSecure = &wclientSecure;  
   
   // pass your developer details
@@ -64,6 +63,11 @@ void setup() {
   obj.onReconnect = callbackOnReconnect; // optional callback
   obj.onWiFiConfigChanged = callbackOnWiFiConfigChanged; // optional callback
   
+  // apTimeout is timeout for ESP when it works as soft AP.
+  // use timeout for low battery powered device to make sure ESP not work as AP too long. 
+  // optional timeout in ms. Default is 0, which means no timeout. If 0 then callbackOnAPTimeout is not required
+  obj.apTimeout = 120000;
+
   // triggered only if apTimeout greater than 0ms.
   // if  apTimeout > 0 and this callback is not defined then after timeout will goes to deep sleep.
   obj.onAPTimeout = callbackOnAPTimeout; 
