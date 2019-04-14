@@ -28,8 +28,8 @@ using namespace axTLS;
 #define PAYLOAD_BUFFER_SIZE 501
 
 #define PIN_RESET 3
-#define AP_TO_SLEEP 0 // in ms. 0 is no limit. 
 #define WIFI_RETRY 3
+#define AP_TIMEOUT 0 // in ms. 0 is no limit. 
 
 typedef void (*callbackFunction) ();
 
@@ -39,7 +39,7 @@ class M1128 {
 
     uint8_t pinReset = PIN_RESET;
     uint8_t wifiConnectRetry = WIFI_RETRY;
-    unsigned int softAPtoSleep = AP_TO_SLEEP;
+    unsigned int apTimeout = AP_TIMEOUT;
     void init(PubSubClient &mqttClient, bool cleanSession);
     void init(PubSubClient &mqttClient, bool cleanSession, Stream &serialDebug);
     bool isReady = false;
@@ -48,6 +48,7 @@ class M1128 {
     callbackFunction onConnect;    
     callbackFunction onReconnect;
     callbackFunction onWiFiConfigChanged;
+    callbackFunction onAPTimeout;
 
     void reset();
     void restart();

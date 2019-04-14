@@ -52,11 +52,17 @@ void M1128::loop() {
     _wifi_ap_server.handleClient();    
   } else _mqttConnect();
   _checkResetButton();
-  if (_softAPStartMillis>0 && softAPtoSleep > 0) { // if WiFi in SoftAP mode
+  if (_softAPStartMillis>0 && apTimeout > 0) { // if WiFi in SoftAP mode
     _softAPCurrentMillis = millis();
-    if ((_softAPCurrentMillis - _softAPStartMillis) > softAPtoSleep) {
-      if (_serialDebug) _serialDebug->println(F("Exceeded wait time, going to deep sleep.."));
-      ESP.deepSleep(0);
+    if ((_softAPCurrentMillis - _softAPStartMillis) > apTimeout) {
+      if (_serialDebug) _serialDebug->println(F("Exceeded apTimeout.."));
+      if (onAPTimeout!=NULL) {
+        if (_serialDebug) _serialDebug->println(F("Triggering onAPTimeout().."));
+        onAPTimeout();
+      } else {
+        if (_serialDebug) _serialDebug->println(F("Going to deep sleep.."));
+        ESP.deepSleep(0);
+      }
     }
   }
 }
