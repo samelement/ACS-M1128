@@ -50,7 +50,7 @@ void setup() {
   obj.setId("ABCDEXFGH"); // optional to set device serial number, default is retrieved from ESP.getChipId()
   obj.pinReset = 3; // optional to set the factory reset pin to GPIO3, default is GPIO3
   obj.wifiConnectRetry = 2; // optional set wifi connect trial before going to AP mode, default is 3
-  obj.softAPtoSleep = 120000; // optional timeout in ms. Default is 0, which means no timeout. 
+  obj.apTimeout = 120000; // optional timeout in ms. Default is 0, which means no timeout. If 0 then callbackOnAPTimeout is not required
   obj.wifiClientSecure = &wclientSecure;  
   
   // pass your developer details
@@ -63,6 +63,9 @@ void setup() {
   obj.onConnect = callbackOnConnect; // optional callback
   obj.onReconnect = callbackOnReconnect; // optional callback
   obj.onWiFiConfigChanged = callbackOnWiFiConfigChanged; // optional callback
+  
+  // triggered only if apTimeout greater than 0ms. if this callback not defined then after timeout will goes to deepsleep 
+  obj.onAPTimeout = callbackOnAPTimeout; 
   
   ESP.wdtEnable(8000); // if you wish to enable watchdog
   obj.init(client,true,SerialDEBUG); // pass client, set clean_session=true, use debug (optional).
@@ -84,6 +87,11 @@ void callbackOnReconnect() {
     // if you use set clean_session=true, then you need to re-subscribe here
 }
 void callbackOnWiFiConfigChanged() {
+    // your codes
+}
+void callbackOnAPTimeout() {
+    // ESP.deepSleep(0);
+    // obj.restart();
     // your codes
 }
 ```
