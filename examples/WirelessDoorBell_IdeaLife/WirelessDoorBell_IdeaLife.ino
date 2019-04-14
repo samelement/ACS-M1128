@@ -39,6 +39,7 @@ void setup()
   digitalWrite(DEVICE_PIN_BUTTON_OUTPUT, DEVICE_PIN_OUTPUT_DEFSTATE);
   pinMode(3, FUNCTION_3);
   obj.pinReset = 3;
+  obj.apTimeout = 120000;
   obj.wifiClientSecure = &wclientSecure;
   obj.devConfig(DEVELOPER_ID, DEVELOPER_USER, DEVELOPER_PASS);
   obj.wifiConfig(WIFI_DEFAULT_SSID, WIFI_DEFAULT_PASS);
@@ -85,6 +86,11 @@ void callbackOnConnect()
 void callbackOnReconnect()
 {
   initSubscribe();
+}
+
+void callbackOnAPTimeout() {
+  //ESP.deepSleep(300000000); // sleep for 5 minutes
+  obj.restart();
 }
 
 void checkBellButton()
