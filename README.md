@@ -110,6 +110,13 @@ void loop() {
 }
 ```
 
+# How to Flash
+
+In every newly created project, there are 2 steps to upload your project:
+* Upload WiFi Configuration Interface files with SPIFFS Data Uploader, via menu Tools -> ESP8266 Sketch Data Upload.
+* Upload your sketch as usual through Sketch -> Upload (or via Upload button)
+
+
 # License
 
 This code is released under the MIT License.
