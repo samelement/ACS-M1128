@@ -5,6 +5,7 @@ SAM Element is an IoT platform. Visit our [website](https://www.samelement.com) 
 
 ## Quick Links & Requirements
   - [Knowledgebase](https://ask.samelement.com)
+  - [ESP8266 Documentation](https://arduino-esp8266.readthedocs.io/en/latest/index.html)
   - [Arduino core for ESP8266 WiFi chip](https://github.com/esp8266/Arduino)
   - [Arduino ESP8266 filesystem uploader](https://github.com/esp8266/arduino-esp8266fs-plugin)
   - [PubSubClient](https://github.com/Imroy/pubsubclient)
@@ -96,7 +97,8 @@ void callbackOnWiFiConfigChanged() {
 }
 void callbackOnAPTimeout() {
     // ESP.deepSleep(0);
-    // obj.restart();
+    // obj.restart(); // call to restart via software
+    // obj.reset(); // call to reset the wifi configuration saved in ESP, this will trigger onReset()
     // your codes
 }
 ```
