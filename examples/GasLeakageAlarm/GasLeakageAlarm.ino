@@ -1,3 +1,10 @@
+/* 
+ *  Gas Leakage Alarm example with ESP8266-01:
+ *  
+ *  Publish message "/sensor/lpg" with value "true" whenever GPIO0 (board pin 5) triggered with low signal.
+ *  
+ */
+ 
 #include "M1128.h"
 
 #define DEBUG true //true if you want to debug.
