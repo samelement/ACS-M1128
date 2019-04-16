@@ -1,3 +1,13 @@
+/* 
+ *  Wireless door bell example with ESP8266-01:
+ *  
+ *  1. Publish message "/bell/button" with value "true" whenever GPIO0 (board pin 5) triggered.
+ *  2. When the push button is being pressed, it must send low signal to GPIO0 (Board pin 5)
+ *  3. ESP will immidiately publish "/bell/button" with value "true"
+ *  4. When receive message "/bell/button/set" with value "true", bellMe() will pulse low signal on GPIO2 (board pin 3).
+ *  
+ */
+
 #include "M1128.h"
 
 #define DEBUG true
@@ -78,17 +88,12 @@ void callbackOnAPTimeout() {
   obj.restart();
 }
 
-uint8_t startCount = 0;
 void checkBellButton() {
   if (!client.connected()) return;
   pinButtonCurrentState = digitalRead(DEVICE_PIN_BUTTON_INPUT);
   if (pinButtonLastState==DEVICE_PIN_BUTTON_DEFSTATE && pinButtonCurrentState!=pinButtonLastState) {    
-    if (startCount<5) startCount++;
-    else {
-      client.publish(MQTT::Publish(obj.constructTopic("bell/button"), "true").set_retain(false).set_qos(1)); 
-      startCount = 0;
-      delay(5000);
-    }
+    client.publish(MQTT::Publish(obj.constructTopic("bell/button"), "true").set_retain(false).set_qos(1)); 
+    delay(5000);
   }
   pinButtonLastState = pinButtonCurrentState;  
 }
