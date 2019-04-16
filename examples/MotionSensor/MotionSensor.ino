@@ -1,3 +1,13 @@
+/* 
+ *  Motion sensor example with ESP8266-01:
+ *  
+ *  1. Publish message "/sensor/motion" with value "true" whenever sensor triggered.
+ *  2. When sensor is being triggered, it must send low signal to pin restart ESP (Board pin 6)
+ *  3. ESP will immidiately publish all neccessary messages on bootup and followed publish "/sensor/motion"
+ *  4. ESP will then goes to deep sleep to keep the power low.
+ *  
+ */
+
 #include "M1128.h"
 
 #define DEBUG true
