@@ -23,9 +23,9 @@ Example connection below is done for ESP8266-01. You may need to made some adjus
 ### Define default values
 ```sh
 // get your account details in your dashboard
-#define DEVELOPER_ID "889" // this is your developer id 
-#define DEVELOPER_USER "aXI0Okdg7R9jsku382JkjsIEbIwDeFaG" // this is your device API username
-#define DEVELOPER_PASS "skJHsueX821cj2Js8skk9Kjs4DUmnUsp" // this is your device API password
+#define DEVELOPER_ID "<insert your developer id>" 
+#define DEVELOPER_USER "<insert your API Device username>"
+#define DEVELOPER_PASS "<insert your API Device password>"
 
 #define WIFI_DEFAULT_SSID "MySmartDevice" // create your own custom SSID
 #define WIFI_DEFAULT_PASS "1234" // put a password
