@@ -35,7 +35,7 @@ Example connection below is done for ESP8266-01. You may need to made some adjus
 ```sh
 WiFiClientSecure wclientSecure;
 PubSubClient client(wclientSecure, MQTT_BROKER_HOST, MQTT_BROKER_PORT_TLS);
-HardwareSerial SerialDEBUG = Serial; // optional if you wish to debug
+HardwareSerial *SerialDEBUG = &Serial; // optional if you wish to debug
 M1128 obj;
 ```
 
@@ -43,9 +43,9 @@ M1128 obj;
 ```sh
 void setup() {
   // If you want to debug, initialize your SerialDEBUG
-  SerialDEBUG.begin(DEBUG_BAUD, SERIAL_8N1, SERIAL_TX_ONLY);
+  SerialDEBUG->begin(DEBUG_BAUD, SERIAL_8N1, SERIAL_TX_ONLY);
   while (!SerialDEBUG);
-  SerialDEBUG.println("Initializing..");
+  SerialDEBUG->println("Initializing..");
   
   pinMode(3, FUNCTION_3); // this will set GPIO3 (RX) to be used as input
   obj.setId("ABCDEXFGH"); // optional to set device serial number, default is retrieved from ESP.getChipId()
