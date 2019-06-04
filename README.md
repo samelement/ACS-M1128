@@ -84,7 +84,7 @@ void setup() {
   obj.onWiFiTimeout = callbackOnWiFiTimeout; 
   
   ESP.wdtEnable(8000); // if you wish to enable watchdog
-  obj.init(client,true,SerialDEBUG); // pass client, set clean_session=true, use debug (optional).
+  obj.init(client,true,true,SerialDEBUG); // pass client, set clean_session=true, set lwt=true, use debug (optional).
 }
 ```
 
