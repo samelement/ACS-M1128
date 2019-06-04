@@ -15,7 +15,7 @@
 
 WiFiClientSecure wclientSecure;
 PubSubClient client(wclientSecure, MQTT_BROKER_HOST, MQTT_BROKER_PORT_TLS);
-HardwareSerial SerialDEBUG = Serial;
+HardwareSerial *SerialDEBUG = &Serial;
 M1128 obj;
 
 bool pinButtonLastState = DEVICE_PIN_BUTTON_DEFSTATE;
@@ -23,9 +23,9 @@ bool pinButtonCurrentState = DEVICE_PIN_BUTTON_DEFSTATE;
 
 void setup() {
   if (DEBUG) {
-    SerialDEBUG.begin(DEBUG_BAUD, SERIAL_8N1, SERIAL_TX_ONLY);
+    SerialDEBUG->begin(DEBUG_BAUD, SERIAL_8N1, SERIAL_TX_ONLY);
     while (!SerialDEBUG);
-    SerialDEBUG.println("Initializing..");
+    SerialDEBUG->println("Initializing..");
   }
   client.set_callback(callbackOnReceive);
   pinMode(DEVICE_PIN_BUTTON_OUTPUT,OUTPUT);
@@ -42,7 +42,7 @@ void setup() {
   obj.onAPTimeout = callbackOnAPTimeout;
   obj.onWiFiTimeout = callbackOnWiFiTimeout;
   ESP.wdtEnable(8000);
-  obj.init(client,true,SerialDEBUG); //pass client, set clean_session=true, use debug.
+  obj.init(client,true,true,SerialDEBUG); //pass client, set clean_session=true, set lwt=true, use debug.
   delay(10);
 }
 
@@ -53,10 +53,10 @@ void loop() {
 
 void callbackOnReceive(const MQTT::Publish& pub) {
   if (DEBUG) {
-    SerialDEBUG.print(F("Receiving topic: "));
-    SerialDEBUG.println(pub.topic());
-    SerialDEBUG.print("With value: ");
-    SerialDEBUG.println(pub.payload_string());
+    SerialDEBUG->print(F("Receiving topic: "));
+    SerialDEBUG->println(pub.topic());
+    SerialDEBUG->print("With value: ");
+    SerialDEBUG->println(pub.payload_string());
   }
   if (pub.topic()==obj.constructTopic("reset") && pub.payload_string()=="true") obj.reset();
   else if (pub.topic()==obj.constructTopic("restart") && pub.payload_string()=="true") obj.restart();
