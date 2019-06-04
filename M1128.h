@@ -42,8 +42,10 @@ class M1128 {
     uint8_t wifiConnectRetry = WIFI_RETRY;
     unsigned int apTimeout = AP_TIMEOUT;
     unsigned int wifiTimeout = WIFI_FAIL_TIMEOUT;    
+    void init(PubSubClient &mqttClient);
     void init(PubSubClient &mqttClient, bool cleanSession);
-    void init(PubSubClient &mqttClient, bool cleanSession, Stream &serialDebug);
+    void init(PubSubClient &mqttClient, bool cleanSession, bool setWill);
+    void init(PubSubClient &mqttClient, bool cleanSession, bool setWill, Stream *serialDebug);
     bool isReady = false;
     WiFiClientSecure *wifiClientSecure;
     callbackFunction onReset;
@@ -76,6 +78,7 @@ class M1128 {
     const char* _wifi_ap_ssid;
     const char* _wifi_ap_pass;
     bool _mqttCleanSession = false;
+    bool _mqttSetWill = true;
     uint8_t _wifiConnectRetryVal = 0;
     unsigned int _softAPStartMillis = 0;
     unsigned int _softAPCurrentMillis = 0;

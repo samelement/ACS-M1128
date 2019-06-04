@@ -28,21 +28,28 @@ void M1128::wifiConfig(const char* ap_ssid, const char* ap_pass, IPAddress local
   _wifi_ap_subnet = subnet;
 }
 
-void M1128::init(PubSubClient &mqttClient, bool cleanSession) {
-  SPIFFS.begin();
-  pinMode(pinReset, INPUT_PULLUP);
-  _mqttClient = &mqttClient;
-  _mqttCleanSession = cleanSession;
-  if (!_checkResetButton()) _initNetwork();
+void M1128::init(PubSubClient &mqttClient) {
+  init(mqttClient,_mqttCleanSession,_mqttSetWill);
 }
 
-void M1128::init(PubSubClient &mqttClient, bool cleanSession, Stream &serialDebug) {
+void M1128::init(PubSubClient &mqttClient, bool cleanSession) {
+  init(mqttClient,cleanSession,_mqttSetWill);
+}
+
+void M1128::init(PubSubClient &mqttClient, bool cleanSession, bool setWill) {
+  init(mqttClient,cleanSession,setWill,NULL);
+}
+
+void M1128::init(PubSubClient &mqttClient, bool cleanSession, bool setWill, Stream *serialDebug) {
   SPIFFS.begin();
   pinMode(pinReset, INPUT_PULLUP);  
-  _serialDebug = &serialDebug;
-  _serialDebug->flush();
+  if (serialDebug) {
+    _serialDebug = serialDebug;
+    _serialDebug->flush();
+  }
   _mqttClient = &mqttClient;
   _mqttCleanSession = cleanSession;
+  _mqttSetWill = setWill;
   if (!_checkResetButton()) _initNetwork();
 }
 
@@ -241,9 +248,9 @@ bool M1128::_mqttConnect() {
     if (_serialDebug) _serialDebug->println(F("Connecting to MQTT server"));
     MQTT::Connect con(myId());
     con.set_clean_session(_mqttCleanSession);
-    con.set_will(constructTopic(MQTT_WILL_TOPIC), MQTT_WILL_VALUE, MQTT_WILL_QOS, MQTT_WILL_RETAIN);
     con.set_auth(_dev_user, _dev_pass);
     con.set_keepalive(MQTT_KEEPALIVE);
+    if (_mqttSetWill) con.set_will(constructTopic(MQTT_WILL_TOPIC), MQTT_WILL_VALUE, MQTT_WILL_QOS, MQTT_WILL_RETAIN);
     if (_mqttClient->connect(con)) {
       if (_serialDebug) _serialDebug->println(F("Connected to MQTT server"));
       if (_startWiFi) {
