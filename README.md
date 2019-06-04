@@ -64,14 +64,24 @@ void setup() {
   obj.onReconnect = callbackOnReconnect; // optional callback
   obj.onWiFiConfigChanged = callbackOnWiFiConfigChanged; // optional callback
   
-  // apTimeout is timeout for ESP when it works as soft AP.
-  // use timeout for low battery powered device to make sure ESP not work as AP too long. 
-  // optional timeout in ms. Default is 0, which means no timeout. If 0 then callbackOnAPTimeout is not required
+  // apTimeout is a timeout for ESP when it works as soft AP.
+  // use apTimeout for low battery powered device to make sure ESP not work as AP too long. 
+  // apTimeout is in ms. Default is 0, which means no timeout.
+  // When apTimeout has passed, it will trigger onAPTimeout.
   obj.apTimeout = 120000;
 
-  // triggered only if apTimeout greater than 0ms.
-  // if  apTimeout > 0 and this callback is not defined then after timeout will goes to deep sleep.
+  // if apTimeout > 0 and and apTimeout has passed, it will trigger a callback you can define here.
+  // if this callback is not defined then after timeout it will goes to deep sleep.
   obj.onAPTimeout = callbackOnAPTimeout; 
+  
+  // wifiTimeout is a timeout for ESP to keep try to connect to a WiFi AP.
+  // wifiTimeout is in ms. Default is 0, which means no timeout.
+  // When wifiTimeout has passed, it will trigger onWiFiTimeout.
+  obj.wifiTimeout = 120000;
+
+  // if wifiTimeout > 0 and and wifiTimeout has passed, it will trigger a callback you can define here.
+  // if this callback is not defined then after timeout it will goes to deep sleep.
+  obj.onWiFiTimeout = callbackOnWiFiTimeout; 
   
   ESP.wdtEnable(8000); // if you wish to enable watchdog
   obj.init(client,true,SerialDEBUG); // pass client, set clean_session=true, use debug (optional).
@@ -99,6 +109,10 @@ void callbackOnAPTimeout() {
     // ESP.deepSleep(0);
     // obj.restart(); // call to restart via software
     // obj.reset(); // call to reset the wifi configuration saved in ESP, this will trigger onReset()
+    // your codes
+}
+void callbackOnWiFiTimeout() {
+    // ESP.deepSleep(0);
     // your codes
 }
 ```
