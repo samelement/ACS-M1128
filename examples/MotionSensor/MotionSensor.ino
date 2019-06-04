@@ -22,14 +22,14 @@
 
 WiFiClientSecure wclientSecure;
 PubSubClient client(wclientSecure,MQTT_BROKER_HOST,MQTT_BROKER_PORT_TLS);
-HardwareSerial SerialDEBUG = Serial;
+HardwareSerial *SerialDEBUG = &Serial;
 M1128 obj;
 
 void setup() {
   if (DEBUG) {
-    SerialDEBUG.begin(DEBUG_BAUD, SERIAL_8N1, SERIAL_TX_ONLY);
+    SerialDEBUG->begin(DEBUG_BAUD, SERIAL_8N1, SERIAL_TX_ONLY);
     while (!SerialDEBUG);
-    SerialDEBUG.println("Initializing..");
+    SerialDEBUG->println("Initializing..");
   }
   pinMode(3, FUNCTION_3);
   obj.pinReset = 3;
@@ -42,7 +42,7 @@ void setup() {
   obj.onAPTimeout = callbackOnAPTimeout;
   obj.onWiFiTimeout = callbackOnWiFiTimeout;  
   ESP.wdtEnable(8000);  
-  obj.init(client,true,SerialDEBUG); //pass client, set clean_session=true, use debug.
+  obj.init(client,true,false,SerialDEBUG); //pass client, set clean_session=true, don't use lwt, use debug.
   delay(10);
 }
 
