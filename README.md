@@ -22,6 +22,7 @@ Example connection below is done for ESP8266-01. You may need to made some adjus
 ### Define default values
 ```sh
 // get your account details in your dashboard
+// DO NOT use existing developer user & pass in example as we do not guarantee it will work and for how long.
 #define DEVELOPER_ID "<insert your developer id>" 
 #define DEVELOPER_USER "<insert your API Device username>"
 #define DEVELOPER_PASS "<insert your API Device password>"
