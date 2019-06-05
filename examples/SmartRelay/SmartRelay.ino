@@ -1,3 +1,11 @@
+/* 
+ *  Smart relay example with ESP8266-01:
+ *  
+ *  1. Receive message "/relay/onoff/set" with value "true" or "false".
+ *  2. When "true" it will trigger LOW to GPIO2, otherwise trigger HIGH.
+ *  
+ */
+
 #include "M1128.h"
 
 #define DEBUG true
@@ -17,9 +25,6 @@ WiFiClientSecure wclientSecure;
 PubSubClient client(wclientSecure, MQTT_BROKER_HOST, MQTT_BROKER_PORT_TLS);
 HardwareSerial *SerialDEBUG = &Serial;
 M1128 obj;
-
-bool pinButtonLastState = DEVICE_PIN_BUTTON_DEFSTATE;
-bool pinButtonCurrentState = DEVICE_PIN_BUTTON_DEFSTATE;
 
 void setup() {
   if (DEBUG) {
@@ -60,8 +65,8 @@ void callbackOnReceive(const MQTT::Publish& pub) {
   }
   if (pub.topic()==obj.constructTopic("reset") && pub.payload_string()=="true") obj.reset();
   else if (pub.topic()==obj.constructTopic("restart") && pub.payload_string()=="true") obj.restart();
-  else if (pub.topic()==obj.constructTopic("relay/onoff/set") && pub.payload_string()=="true") switchMe(true);
-  else if (pub.topic()==obj.constructTopic("relay/onoff/set") && pub.payload_string()=="false") switchMe(false);
+  else if (pub.topic()==obj.constructTopic("relay/onoff/set") && pub.payload_string()=="true") switchMe(!DEVICE_PIN_BUTTON_DEFSTATE);
+  else if (pub.topic()==obj.constructTopic("relay/onoff/set") && pub.payload_string()=="false") switchMe(DEVICE_PIN_BUTTON_DEFSTATE);
 }
 
 void callbackOnConnect() {
