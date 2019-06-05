@@ -3,6 +3,7 @@
  *  
  *  1. Publish message every sensorDelayMS to "/sensor/temp" and "/sensor/humid" for temperature and humidity.
  *  2. Connect DHT22 data out to GPIO0.
+ *  3. This example use Adafruit unified sensor library for DHT22 reading, hence you must install it first.
  *  
  */
 
