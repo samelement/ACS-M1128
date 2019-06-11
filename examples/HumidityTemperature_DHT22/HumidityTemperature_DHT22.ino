@@ -99,7 +99,7 @@ void measureSensors() {
   sensorCurMillis = millis();
   if ((sensorCurMillis - sensorPrevMillis > sensorDelayMS) || (sensorCurMillis - sensorPrevMillis < 0)) {
     sensorPrevMillis = sensorCurMillis;
-    char result[6]; // Buffer big enough for 7-character float
+    char result[6]; // Buffer big enough for 6-character float
     // Get temperature event and print its value.
     sensors_event_t event;  
     dht.temperature().getEvent(&event);
