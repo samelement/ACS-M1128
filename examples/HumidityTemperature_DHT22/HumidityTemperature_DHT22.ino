@@ -72,23 +72,23 @@ void initSensors() {
   dht.temperature().getSensor(&sensor);
   SerialDEBUG->println("------------------------------------");
   SerialDEBUG->println("Temperature");
-  SerialDEBUG->print  ("Sensor:       "); Serial.println(sensor.name);
-  SerialDEBUG->print  ("Driver Ver:   "); Serial.println(sensor.version);
-  SerialDEBUG->print  ("Unique ID:    "); Serial.println(sensor.sensor_id);
-  SerialDEBUG->print  ("Max Value:    "); Serial.print(sensor.max_value); Serial.println(" *C");
-  SerialDEBUG->print  ("Min Value:    "); Serial.print(sensor.min_value); Serial.println(" *C");
-  SerialDEBUG->print  ("Resolution:   "); Serial.print(sensor.resolution); Serial.println(" *C");  
+  SerialDEBUG->print  ("Sensor:       "); SerialDEBUG->println(sensor.name);
+  SerialDEBUG->print  ("Driver Ver:   "); SerialDEBUG->println(sensor.version);
+  SerialDEBUG->print  ("Unique ID:    "); SerialDEBUG->println(sensor.sensor_id);
+  SerialDEBUG->print  ("Max Value:    "); SerialDEBUG->print(sensor.max_value); SerialDEBUG->println(" *C");
+  SerialDEBUG->print  ("Min Value:    "); SerialDEBUG->print(sensor.min_value); SerialDEBUG->println(" *C");
+  SerialDEBUG->print  ("Resolution:   "); SerialDEBUG->print(sensor.resolution); SerialDEBUG->println(" *C");  
   SerialDEBUG->println("------------------------------------");
   // Print humidity sensor details.
   dht.humidity().getSensor(&sensor);
   SerialDEBUG->println("------------------------------------");
   SerialDEBUG->println("Humidity");
-  SerialDEBUG->print  ("Sensor:       "); Serial.println(sensor.name);
-  SerialDEBUG->print  ("Driver Ver:   "); Serial.println(sensor.version);
-  SerialDEBUG->print  ("Unique ID:    "); Serial.println(sensor.sensor_id);
-  SerialDEBUG->print  ("Max Value:    "); Serial.print(sensor.max_value); Serial.println("%");
-  SerialDEBUG->print  ("Min Value:    "); Serial.print(sensor.min_value); Serial.println("%");
-  SerialDEBUG->print  ("Resolution:   "); Serial.print(sensor.resolution); Serial.println("%");  
+  SerialDEBUG->print  ("Sensor:       "); SerialDEBUG->println(sensor.name);
+  SerialDEBUG->print  ("Driver Ver:   "); SerialDEBUG->println(sensor.version);
+  SerialDEBUG->print  ("Unique ID:    "); SerialDEBUG->println(sensor.sensor_id);
+  SerialDEBUG->print  ("Max Value:    "); SerialDEBUG->print(sensor.max_value); SerialDEBUG->println("%");
+  SerialDEBUG->print  ("Min Value:    "); SerialDEBUG->print(sensor.min_value); SerialDEBUG->println("%");
+  SerialDEBUG->print  ("Resolution:   "); SerialDEBUG->print(sensor.resolution); SerialDEBUG->println("%");  
   SerialDEBUG->println("------------------------------------");
   // Set delay between sensor readings based on sensor details.
   sensorDelayMS = sensor.min_delay / 1000;
