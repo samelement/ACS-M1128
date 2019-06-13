@@ -47,6 +47,7 @@ class M1128 {
     void init(PubSubClient &mqttClient, bool cleanSession, bool setWill);
     void init(PubSubClient &mqttClient, bool cleanSession, bool setWill, Stream *serialDebug);
     bool isReady = false;
+    bool autoAP = false;
     WiFiClientSecure *wifiClientSecure;
     callbackFunction onReset;
     callbackFunction onConnect;    
@@ -91,7 +92,7 @@ class M1128 {
     char _custAddr[33];
     bool _startWiFi = false;
 
-    void _initNetwork();
+    void _initNetwork(bool goAP);
     bool _checkResetButton();
     bool _wifiConnect();
     bool _wifiConnect(const char* ssid, const char* password);

@@ -50,7 +50,7 @@ void M1128::init(PubSubClient &mqttClient, bool cleanSession, bool setWill, Stre
   _mqttClient = &mqttClient;
   _mqttCleanSession = cleanSession;
   _mqttSetWill = setWill;
-  if (!_checkResetButton()) _initNetwork();
+  if (!_checkResetButton()) _initNetwork(false);
 }
 
 void M1128::loop() {
@@ -121,7 +121,7 @@ void M1128::reset() {
   if (_serialDebug) _serialDebug->println(F("Restoring to factory setting.."));
   WiFi.disconnect(true);
   delay(1000);
-  _initNetwork();
+  _initNetwork(true);
   if (onReset!=NULL) onReset();
 }
 
@@ -132,7 +132,7 @@ void M1128::restart() {
   ESP.restart();
 }
 
-void M1128::_initNetwork() {
+void M1128::_initNetwork(bool goAP) {
   _retrieveDeviceId();
   if (_wifiConnect()) {
     if (wifiClientSecure!=NULL) {
@@ -150,11 +150,20 @@ void M1128::_initNetwork() {
       delay(3000);
       if (_serialDebug) _serialDebug->println(F("Trying to connect again..."));
       _wifiConnectRetryVal++;
-      _initNetwork();
+      _initNetwork(goAP);
     } else {
       _wifiConnectRetryVal = 0;
-      _wifiSoftAP();
       if (_serialDebug) _serialDebug->println(F("M1128 initialization failed!"));      
+      if (autoAP || goAP) {
+        if (autoAP && _serialDebug) _serialDebug->println(F("autoAP is enable, I will go to AP now..!"));      
+        if (goAP && _serialDebug) _serialDebug->println(F("Factory reset pressed, I will go to AP now..!"));      
+        _wifiSoftAP();
+      }
+      else {
+        if (_serialDebug) _serialDebug->println(F("Neither autoAP or factory reset pressed, I will sleep for apTimeout ms..!"));
+        ESP.deepSleep(apTimeout*1000);
+        ESP.restart();
+      }
     }
   }
 }
