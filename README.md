@@ -50,6 +50,12 @@ void setup() {
   pinMode(3, FUNCTION_3); // this will set GPIO3 (RX) to be used as input
   obj.setId("ABCDEXFGH"); // optional to set device serial number, default is retrieved from ESP.getChipId()
   obj.pinReset = 3; // optional to set the factory reset pin to GPIO3, default is GPIO3
+  
+  // autoAP is an option to allow ESP automatically set up as AP. Default value is false
+  // If set to true, when first turn on, it will go to AP if wifi connect failed.
+  // Other way to go to AP is by trigger pin reset;
+  obj.autoAP = false;
+  
   obj.wifiConnectRetry = 2; // optional set wifi connect trial before going to AP mode, default is 3  
   obj.wifiClientSecure = &wclientSecure;  
   
