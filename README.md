@@ -15,6 +15,12 @@ SAM Element is an IoT platform. Visit our [website](https://www.samelement.com) 
   - Support for ESP8266 board.
   - Easy connect to SAM Element IoT platform.
   - Ready to use some working examples for real application.
+  - WiFi configuration page ready.
+  - Auto Access Point.
+  - Embedded factory reset.
+  - Custom serial number.
+  - Secure connection.
+  - You just need to focus on sensors/actuators, we handle the rest.
 
 # How to Use
 
