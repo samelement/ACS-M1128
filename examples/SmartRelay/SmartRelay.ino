@@ -97,27 +97,27 @@ void publishState(const char* state) {
 
 void initPublish() {
   if (client.connected()) {    
-    client.publish(MQTT::Publish(obj.constructTopic("$state"), "init").set_retain().set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("$sammy"), "1.0.0").set_retain().set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("$name"), "Smart Relay").set_retain().set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("$model"), "SAM-SMR01").set_retain().set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("$mac"), WiFi.macAddress()).set_retain().set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("$localip"), WiFi.localIP().toString()).set_retain().set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("$fw/name"), "WDB01").set_retain().set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("$fw/version"), "1.00").set_retain().set_qos(1));    
-    client.publish(MQTT::Publish(obj.constructTopic("$reset"), "true").set_retain().set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("$restart"), "true").set_retain().set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("$nodes"), "relay").set_retain().set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("$state"), "init").set_retain(false).set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("$sammy"), "1.0.0").set_retain(false).set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("$name"), "Smart Relay").set_retain(false).set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("$model"), "SAM-SMR01").set_retain(false).set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("$mac"), WiFi.macAddress()).set_retain(false).set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("$localip"), WiFi.localIP().toString()).set_retain(false).set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("$fw/name"), "WDB01").set_retain(false).set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("$fw/version"), "1.00").set_retain(false).set_qos(1));    
+    client.publish(MQTT::Publish(obj.constructTopic("$reset"), "true").set_retain(false).set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("$restart"), "true").set_retain(false).set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("$nodes"), "relay").set_retain(false).set_qos(1));
   
   //define node "relay"
-    client.publish(MQTT::Publish(obj.constructTopic("relay/$name"), "Relay").set_retain().set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("relay/$type"), "Relay-01").set_retain().set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("relay/$properties"), "onoff").set_retain().set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("relay/$name"), "Relay").set_retain(false).set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("relay/$type"), "Relay-01").set_retain(false).set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("relay/$properties"), "onoff").set_retain(false).set_qos(1));
 
-    client.publish(MQTT::Publish(obj.constructTopic("relay/onoff/$name"), "Relay On Off").set_retain().set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("relay/onoff/$settable"), "true").set_retain().set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("relay/onoff/$retained"), "true").set_retain().set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("relay/onoff/$datatype"), "boolean").set_retain().set_qos(1));  
+    client.publish(MQTT::Publish(obj.constructTopic("relay/onoff/$name"), "Relay On Off").set_retain(false).set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("relay/onoff/$settable"), "true").set_retain(false).set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("relay/onoff/$retained"), "true").set_retain(false).set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("relay/onoff/$datatype"), "boolean").set_retain(false).set_qos(1));  
   }
 }
 
