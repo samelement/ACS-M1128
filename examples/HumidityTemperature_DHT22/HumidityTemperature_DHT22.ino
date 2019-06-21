@@ -111,7 +111,7 @@ void measureSensors() {
       SerialDEBUG->print(event.temperature);
       SerialDEBUG->println(" °C");
       dtostrf(event.temperature, 4, 2, result);
-      client.publish(MQTT::Publish(obj.constructTopic("sensor/temp"), result).set_retain(true).set_qos(1));
+      client.publish(MQTT::Publish(obj.constructTopic("sensor/temp"), result).set_retain(false).set_qos(1));
     }
     // Get humidity event and print its value.
     dht.humidity().getEvent(&event);
@@ -123,7 +123,7 @@ void measureSensors() {
       SerialDEBUG->print(event.relative_humidity);
       SerialDEBUG->println("%");
       dtostrf(event.relative_humidity, 4, 2, result);
-      client.publish(MQTT::Publish(obj.constructTopic("sensor/humid"), result).set_retain(true).set_qos(1));
+      client.publish(MQTT::Publish(obj.constructTopic("sensor/humid"), result).set_retain(false).set_qos(1));
     }
   }
 }
@@ -162,36 +162,36 @@ void publishState(const char* state) {
 
 void initPublish() {
   if (client.connected()) {    
-    client.publish(MQTT::Publish(obj.constructTopic("$state"), "init").set_retain().set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("$sammy"), "1.0.0").set_retain().set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("$name"), "Smart DHT22").set_retain().set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("$model"), "SAM-DHT22").set_retain().set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("$mac"), WiFi.macAddress()).set_retain().set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("$localip"), WiFi.localIP().toString()).set_retain().set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("$fw/name"), "DHT22").set_retain().set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("$fw/version"), "1.00").set_retain().set_qos(1));    
-    client.publish(MQTT::Publish(obj.constructTopic("$reset"), "true").set_retain().set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("$restart"), "true").set_retain().set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("$nodes"), "sensor").set_retain().set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("$state"), "init").set_retain(false).set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("$sammy"), "1.0.0").set_retain(false).set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("$name"), "Smart DHT22").set_retain(false).set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("$model"), "SAM-DHT22").set_retain(false).set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("$mac"), WiFi.macAddress()).set_retain(false).set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("$localip"), WiFi.localIP().toString()).set_retain(false).set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("$fw/name"), "DHT22").set_retain(false).set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("$fw/version"), "1.00").set_retain(false).set_qos(1));    
+    client.publish(MQTT::Publish(obj.constructTopic("$reset"), "true").set_retain(false).set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("$restart"), "true").set_retain(false).set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("$nodes"), "sensor").set_retain(false).set_qos(1));
   
   //define node "sensor"
-    client.publish(MQTT::Publish(obj.constructTopic("sensor/$name"), "Sensor").set_retain().set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("sensor/$type"), "Sensor-01").set_retain().set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("sensor/$properties"), "temp,humid").set_retain().set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("sensor/$name"), "Sensor").set_retain(false).set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("sensor/$type"), "Sensor-01").set_retain(false).set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("sensor/$properties"), "temp,humid").set_retain(false).set_qos(1));
 
-    client.publish(MQTT::Publish(obj.constructTopic("sensor/temp/$name"), "Temperature").set_retain().set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("sensor/temp/$settable"), "false").set_retain().set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("sensor/temp/$retained"), "true").set_retain().set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("sensor/temp/$datatype"), "float").set_retain().set_qos(1));  
-    client.publish(MQTT::Publish(obj.constructTopic("sensor/temp/$unit"), "°C").set_retain().set_qos(1));  
-    client.publish(MQTT::Publish(obj.constructTopic("sensor/temp/$format"), "-40:125").set_retain().set_qos(1));  
+    client.publish(MQTT::Publish(obj.constructTopic("sensor/temp/$name"), "Temperature").set_retain(false).set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("sensor/temp/$settable"), "false").set_retain(false).set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("sensor/temp/$retained"), "false").set_retain(false).set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("sensor/temp/$datatype"), "float").set_retain(false).set_qos(1));  
+    client.publish(MQTT::Publish(obj.constructTopic("sensor/temp/$unit"), "°C").set_retain(false).set_qos(1));  
+    client.publish(MQTT::Publish(obj.constructTopic("sensor/temp/$format"), "-40:125").set_retain(false).set_qos(1));  
 
-    client.publish(MQTT::Publish(obj.constructTopic("sensor/humid/$name"), "Humidity").set_retain().set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("sensor/humid/$settable"), "false").set_retain().set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("sensor/humid/$retained"), "true").set_retain().set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("sensor/humid/$datatype"), "float").set_retain().set_qos(1));    
-    client.publish(MQTT::Publish(obj.constructTopic("sensor/humid/$unit"), "%").set_retain().set_qos(1));  
-    client.publish(MQTT::Publish(obj.constructTopic("sensor/humid/$format"), "0:100").set_retain().set_qos(1));  
+    client.publish(MQTT::Publish(obj.constructTopic("sensor/humid/$name"), "Humidity").set_retain(false).set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("sensor/humid/$settable"), "false").set_retain(false).set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("sensor/humid/$retained"), "false").set_retain(false).set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("sensor/humid/$datatype"), "float").set_retain(false).set_qos(1));    
+    client.publish(MQTT::Publish(obj.constructTopic("sensor/humid/$unit"), "%").set_retain(false).set_qos(1));  
+    client.publish(MQTT::Publish(obj.constructTopic("sensor/humid/$format"), "0:100").set_retain(false).set_qos(1));  
   }
 }
 
