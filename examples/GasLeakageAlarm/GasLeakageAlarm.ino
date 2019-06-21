@@ -103,30 +103,30 @@ void publishState(const char* state) {
 
 void initPublish() {
   if (client.connected()) {    
-    client.publish(MQTT::Publish(obj.constructTopic("$state"), "init").set_retain().set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("$sammy"), "1.0.0").set_retain().set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("$name"), "Gas Alarm").set_retain().set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("$model"), "SAM-GLA01").set_retain().set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("$mac"), WiFi.macAddress()).set_retain().set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("$localip"), WiFi.localIP().toString()).set_retain().set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("$fw/name"), "GLA01").set_retain().set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("$fw/version"), "1.00").set_retain().set_qos(1));    
-    client.publish(MQTT::Publish(obj.constructTopic("$reset"), "true").set_retain().set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("$restart"), "true").set_retain().set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("$nodes"), "sensor").set_retain().set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("$state"), "init").set_retain(false).set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("$sammy"), "1.0.0").set_retain(false).set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("$name"), "Gas Alarm").set_retain(false).set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("$model"), "SAM-GLA01").set_retain(false).set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("$mac"), WiFi.macAddress()).set_retain(false).set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("$localip"), WiFi.localIP().toString()).set_retain(false).set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("$fw/name"), "GLA01").set_retain(false).set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("$fw/version"), "1.00").set_retain(false).set_qos(1));    
+    client.publish(MQTT::Publish(obj.constructTopic("$reset"), "true").set_retain(false).set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("$restart"), "true").set_retain(false).set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("$nodes"), "sensor").set_retain(false).set_qos(1));
   
   //define node "bell"
-    client.publish(MQTT::Publish(obj.constructTopic("sensor/$name"), "Sensor").set_retain().set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("sensor/$type"), "Sensor-01").set_retain().set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("sensor/$properties"), "lpg").set_retain().set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("sensor/$name"), "Sensor").set_retain(false).set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("sensor/$type"), "Sensor-01").set_retain(false).set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("sensor/$properties"), "lpg").set_retain(false).set_qos(1));
 
-    client.publish(MQTT::Publish(obj.constructTopic("sensor/lpg/$name"), "LPG").set_retain().set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("sensor/lpg/$settable"), "false").set_retain().set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("sensor/lpg/$retained"), "true").set_retain().set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("sensor/lpg/$datatype"), "boolean").set_retain().set_qos(1));  
+    client.publish(MQTT::Publish(obj.constructTopic("sensor/lpg/$name"), "LPG").set_retain(false).set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("sensor/lpg/$settable"), "false").set_retain(false).set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("sensor/lpg/$retained"), "true").set_retain(false).set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("sensor/lpg/$datatype"), "boolean").set_retain(false).set_qos(1));  
 
   // set device to ready
-    client.publish(MQTT::Publish(obj.constructTopic("$state"), "ready").set_retain().set_qos(1));  
+    client.publish(MQTT::Publish(obj.constructTopic("$state"), "ready").set_retain(false).set_qos(1));  
   }
 }
 
