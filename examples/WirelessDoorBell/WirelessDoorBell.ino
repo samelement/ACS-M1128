@@ -117,27 +117,27 @@ void publishState(const char* state) {
 
 void initPublish() {
   if (client.connected()) {    
-    client.publish(MQTT::Publish(obj.constructTopic("$state"), "init").set_retain().set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("$sammy"), "1.0.0").set_retain().set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("$name"), "Wireless Bell").set_retain().set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("$model"), "SAM-WDB01").set_retain().set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("$mac"), WiFi.macAddress()).set_retain().set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("$localip"), WiFi.localIP().toString()).set_retain().set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("$fw/name"), "WDB01").set_retain().set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("$fw/version"), "1.00").set_retain().set_qos(1));    
-    client.publish(MQTT::Publish(obj.constructTopic("$reset"), "true").set_retain().set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("$restart"), "true").set_retain().set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("$nodes"), "bell").set_retain().set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("$state"), "init").set_retain(false).set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("$sammy"), "1.0.0").set_retain(false).set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("$name"), "Wireless Bell").set_retain(false).set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("$model"), "SAM-WDB01").set_retain(false).set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("$mac"), WiFi.macAddress()).set_retain(false).set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("$localip"), WiFi.localIP().toString()).set_retain(false).set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("$fw/name"), "WDB01").set_retain(false).set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("$fw/version"), "1.00").set_retain(false).set_qos(1));    
+    client.publish(MQTT::Publish(obj.constructTopic("$reset"), "true").set_retain(false).set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("$restart"), "true").set_retain(false).set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("$nodes"), "bell").set_retain(false).set_qos(1));
   
   //define node "bell"
-    client.publish(MQTT::Publish(obj.constructTopic("bell/$name"), "Bell").set_retain().set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("bell/$type"), "Bell-01").set_retain().set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("bell/$properties"), "button").set_retain().set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("bell/$name"), "Bell").set_retain(false).set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("bell/$type"), "Bell-01").set_retain(false).set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("bell/$properties"), "button").set_retain(false).set_qos(1));
 
-    client.publish(MQTT::Publish(obj.constructTopic("bell/button/$name"), "Bell Button").set_retain().set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("bell/button/$settable"), "true").set_retain().set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("bell/button/$retained"), "false").set_retain().set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("bell/button/$datatype"), "boolean").set_retain().set_qos(1));  
+    client.publish(MQTT::Publish(obj.constructTopic("bell/button/$name"), "Bell Button").set_retain(false).set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("bell/button/$settable"), "true").set_retain(false).set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("bell/button/$retained"), "false").set_retain(false).set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("bell/button/$datatype"), "boolean").set_retain(false).set_qos(1));  
   }
 }
 
