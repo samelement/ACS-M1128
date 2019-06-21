@@ -161,7 +161,7 @@ void M1128::_initNetwork(bool goAP) {
       }
       else {
         if (_serialDebug) _serialDebug->println(F("Neither autoAP or factory reset pressed, I will sleep for apTimeout ms..!"));
-        ESP.deepSleep(apTimeout*1000);
+        ESP.deepSleep(wifiFailSleep*1000);
         ESP.restart();
       }
     }

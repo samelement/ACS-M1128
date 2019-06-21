@@ -31,6 +31,7 @@ using namespace axTLS;
 #define WIFI_RETRY 3
 #define AP_TIMEOUT 0 // in ms. 0 is no limit. 
 #define WIFI_FAIL_TIMEOUT 0 // in ms. 0 is no limit. 
+#define WIFI_FAIL_SLEEP 5000 // in ms. 0 is forever.
 
 typedef void (*callbackFunction) ();
 
@@ -40,8 +41,9 @@ class M1128 {
 
     uint8_t pinReset = PIN_RESET;
     uint8_t wifiConnectRetry = WIFI_RETRY;
-    unsigned int apTimeout = AP_TIMEOUT;
-    unsigned int wifiTimeout = WIFI_FAIL_TIMEOUT;    
+    uint16_t apTimeout = AP_TIMEOUT;
+    uint16_t wifiTimeout = WIFI_FAIL_TIMEOUT;
+    uint16_t wifiFailSleep = WIFI_FAIL_SLEEP;
     void init(PubSubClient &mqttClient);
     void init(PubSubClient &mqttClient, bool cleanSession);
     void init(PubSubClient &mqttClient, bool cleanSession, bool setWill);
