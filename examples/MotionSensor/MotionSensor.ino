@@ -69,27 +69,27 @@ void callbackOnWiFiTimeout() {
 
 void initPublish() { 
   if (client.connected()) {    
-    client.publish(MQTT::Publish(obj.constructTopic("$state"), "init").set_retain().set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("$sammy"), "1.0.0").set_retain().set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("$name"), "Motion Sensor").set_retain().set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("$model"), "SAM-MS01").set_retain().set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("$mac"), WiFi.macAddress()).set_retain().set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("$localip"), WiFi.localIP().toString()).set_retain().set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("$fw/name"), "MS01").set_retain().set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("$fw/version"), "1.00").set_retain().set_qos(1));    
-    client.publish(MQTT::Publish(obj.constructTopic("$nodes"), "sensor").set_retain().set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("$state"), "init").set_retain(false).set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("$sammy"), "1.0.0").set_retain(false).set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("$name"), "Motion Sensor").set_retain(false).set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("$model"), "SAM-MS01").set_retain(false).set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("$mac"), WiFi.macAddress()).set_retain(false).set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("$localip"), WiFi.localIP().toString()).set_retain(false).set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("$fw/name"), "MS01").set_retain(false).set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("$fw/version"), "1.00").set_retain(false).set_qos(1));    
+    client.publish(MQTT::Publish(obj.constructTopic("$nodes"), "sensor").set_retain(false).set_qos(1));
   
   //define node "bell"
-    client.publish(MQTT::Publish(obj.constructTopic("sensor/$name"), "Sensor").set_retain().set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("sensor/$type"), "Sensor-01").set_retain().set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("sensor/$properties"), "motion").set_retain().set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("sensor/$name"), "Sensor").set_retain(false).set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("sensor/$type"), "Sensor-01").set_retain(false).set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("sensor/$properties"), "motion").set_retain(false).set_qos(1));
 
-    client.publish(MQTT::Publish(obj.constructTopic("sensor/motion/$name"), "Motion Sensor").set_retain().set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("sensor/motion/$settable"), "false").set_retain().set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("sensor/motion/$retained"), "false").set_retain().set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("sensor/motion/$datatype"), "boolean").set_retain().set_qos(1));  
+    client.publish(MQTT::Publish(obj.constructTopic("sensor/motion/$name"), "Motion Sensor").set_retain(false).set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("sensor/motion/$settable"), "false").set_retain(false).set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("sensor/motion/$retained"), "false").set_retain(false).set_qos(1));
+    client.publish(MQTT::Publish(obj.constructTopic("sensor/motion/$datatype"), "boolean").set_retain(false).set_qos(1));  
 
   // set device to ready
-    client.publish(MQTT::Publish(obj.constructTopic("$state"), "ready").set_retain().set_qos(1));  
+    client.publish(MQTT::Publish(obj.constructTopic("$state"), "ready").set_retain(false).set_qos(1));  
   }
 }
