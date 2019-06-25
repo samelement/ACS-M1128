@@ -33,14 +33,14 @@ void setup() {
   }
   pinMode(3, FUNCTION_3);
   obj.pinReset = 3;
-  obj.apTimeout = 120000;
-  obj.wifiTimeout = 120000;  
+  obj.apConfigTimeout = 300000;
+  obj.wifiConnectTimeout = 120000;  
   obj.wifiClientSecure = &wclientSecure;  
   obj.devConfig(DEVELOPER_ID,DEVELOPER_USER,DEVELOPER_PASS);
   obj.wifiConfig(WIFI_DEFAULT_SSID,WIFI_DEFAULT_PASS);
   obj.onConnect = callbackOnConnect;
-  obj.onAPTimeout = callbackOnAPTimeout;
-  obj.onWiFiTimeout = callbackOnWiFiTimeout;  
+  obj.onAPConfigTimeout = callbackOnAPConfigTimeout;
+  obj.onWiFiConnectTimeout = callbackOnWiFiConnectTimeout;  
   ESP.wdtEnable(8000);  
   obj.init(client,true,false,SerialDEBUG); //pass client, set clean_session=true, don't use lwt, use debug.
   delay(10);
@@ -59,11 +59,11 @@ void callbackOnConnect() {
   ESP.deepSleep(0);
 }
 
-void callbackOnAPTimeout() {
+void callbackOnAPConfigTimeout() {
   ESP.deepSleep(0); // going to deep sleep forever
 }
 
-void callbackOnWiFiTimeout() {
+void callbackOnWiFiConnectTimeout() {
   ESP.deepSleep(0); // going to deep sleep forever
 }
 
