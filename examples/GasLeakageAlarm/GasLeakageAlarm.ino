@@ -19,6 +19,7 @@
 
 #define DEVICE_PIN_DEFSTATE LOW //initial/default pin state
 #define DEVICE_PIN_INPUT 0 //GPIO pin input
+#define DEVICE_PIN_OUTPUT 2 // pin GPIO2 for output
 
 WiFiClientSecure wclientSecure;
 PubSubClient client(wclientSecure,MQTT_BROKER_HOST,MQTT_BROKER_PORT_TLS);
@@ -36,6 +37,8 @@ void setup() {
   }
   client.set_callback(callbackOnReceive);
   pinMode(DEVICE_PIN_INPUT,INPUT);
+  pinMode(DEVICE_PIN_OUTPUT,OUTPUT);
+  digitalWrite(DEVICE_PIN_OUTPUT, DEVICE_PIN_DEFSTATE);
   pinMode(3, FUNCTION_3);
   obj.pinReset = 3;
   obj.apConfigTimeout = 300000;
@@ -89,9 +92,11 @@ void callbackOnWiFiConnectTimeout() {
 void checkSensor() {
   if (!client.connected()) return;
   pinCurrentState = digitalRead(DEVICE_PIN_INPUT);
-  if (pinLastState==DEVICE_PIN_DEFSTATE && pinCurrentState!=pinLastState) {    
+  if (pinLastState==!DEVICE_PIN_DEFSTATE && pinCurrentState!=pinLastState) { // alarm ON   
+    digitalWrite(DEVICE_PIN_OUTPUT, !DEVICE_PIN_DEFSTATE); // make noisy board alarm
     client.publish(MQTT::Publish(obj.constructTopic("sensor/lpg"), "true").set_retain().set_qos(1)); 
-  } else if (pinLastState==!DEVICE_PIN_DEFSTATE && pinCurrentState!=pinLastState) {    
+  } else if (pinLastState==DEVICE_PIN_DEFSTATE && pinCurrentState!=pinLastState) {  // alarm OFF  
+    digitalWrite(DEVICE_PIN_OUTPUT, DEVICE_PIN_DEFSTATE); // turn off board alarm
     client.publish(MQTT::Publish(obj.constructTopic("sensor/lpg"), "false").set_retain().set_qos(1)); 
   }
   pinLastState = pinCurrentState;  
