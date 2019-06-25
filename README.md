@@ -62,12 +62,10 @@ void setup() {
   
   // autoAP is an option to allow ESP automatically set up as AP. Default value is false
   // If set to true, when first turn on, it will go to AP if wifi connect failed.
-  // If set to false, when first turn on, it will go to sleep for wifiFailSleep ms. 
-  // Other way to go to AP is by trigger pin reset for at least wifiFailSleep ms.
+  // Other way to go to AP is by trigger pin reset.
   obj.autoAP = false;
-  obj.wifiFailSleep = 0; //0 means sleep forever.
   
-  obj.wifiConnectRetry = 2; // optional set wifi connect trial before going to AP mode, default is 3  
+  obj.wifiConnectRetry = 2; // optional set wifi connect trial before going to AP mode, default is 1  
   obj.wifiClientSecure = &wclientSecure;  
   
   // pass your developer details
@@ -81,24 +79,24 @@ void setup() {
   obj.onReconnect = callbackOnReconnect; // optional callback
   obj.onWiFiConfigChanged = callbackOnWiFiConfigChanged; // optional callback
   
-  // apTimeout is a timeout for ESP when it works as soft AP.
-  // use apTimeout for low battery powered device to make sure ESP not work as AP too long. 
-  // apTimeout is in ms. Default is 0, which means no timeout.
-  // When apTimeout has passed, it will trigger onAPTimeout.
-  obj.apTimeout = 120000;
+  // apConfigTimeout is a timeout for ESP when it works as soft AP.
+  // use apConfigTimeout for low battery powered device to make sure ESP not work as AP too long. 
+  // apConfigTimeout is in ms. Default is 0, which means no timeout.
+  // When apConfigTimeout has passed, it will trigger onAPConfigTimeout.
+  obj.apConfigTimeout = 300000;
 
-  // if apTimeout > 0 and and apTimeout has passed, it will trigger a callback you can define here.
+  // if apConfigTimeout > 0 and and apConfigTimeout has passed, it will trigger a callback you can define here.
   // if this callback is not defined then after timeout it will goes to deep sleep.
-  obj.onAPTimeout = callbackOnAPTimeout; 
+  obj.onAPConfigTimeout = callbackOnAPConfigTimeout; 
   
-  // wifiTimeout is a timeout for ESP to keep try to connect to a WiFi AP.
-  // wifiTimeout is in ms. Default is 0, which means no timeout.
-  // When wifiTimeout has passed, it will trigger onWiFiTimeout.
-  obj.wifiTimeout = 120000;
+  // wifiConnectTimeout is a timeout for ESP to keep try to connect to a WiFi AP.
+  // wifiConnectTimeout is in ms. Default is 0, which means no timeout.
+  // When wifiConnectTimeout has passed, it will trigger onWiFiConnectTimeout.
+  obj.wifiConnectTimeout = 120000;
 
-  // if wifiTimeout > 0 and and wifiTimeout has passed, it will trigger a callback you can define here.
+  // if wifiConnectTimeout > 0 and and wifiTimeout has passed, it will trigger a callback you can define here.
   // if this callback is not defined then after timeout it will goes to deep sleep.
-  obj.onWiFiTimeout = callbackOnWiFiTimeout; 
+  obj.onWiFiConnectTimeout = callbackOnWiFiConnectTimeout; 
   
   ESP.wdtEnable(8000); // if you wish to enable watchdog
   obj.init(client,true,true,SerialDEBUG); // pass client, set clean_session=true, set lwt=true, use debug (optional).
@@ -122,14 +120,16 @@ void callbackOnReconnect() {
 void callbackOnWiFiConfigChanged() {
     // your codes
 }
-void callbackOnAPTimeout() {
+void callbackOnAPConfigTimeout() {
     // ESP.deepSleep(0);
     // obj.restart(); // call to restart via software
     // obj.reset(); // call to reset the wifi configuration saved in ESP, this will trigger onReset()
     // your codes
 }
-void callbackOnWiFiTimeout() {
+void callbackOnWiFiConnectTimeout() {
     // ESP.deepSleep(0);
+    // obj.restart(); // call to restart via software
+    // obj.reset(); // call to reset the wifi configuration saved in ESP, this will trigger onReset()
     // your codes
 }
 ```
