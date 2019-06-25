@@ -39,14 +39,15 @@ void setup()
   digitalWrite(DEVICE_PIN_BUTTON_OUTPUT, DEVICE_PIN_OUTPUT_DEFSTATE);
   pinMode(3, FUNCTION_3);
   obj.pinReset = 3;
-  obj.apTimeout = 120000;
-  obj.wifiTimeout = 120000;
+  obj.apConfigTimeout = 300000;
+  obj.wifiConnectTimeout = 120000;
   obj.wifiClientSecure = &wclientSecure;
   obj.devConfig(DEVELOPER_ID, DEVELOPER_USER, DEVELOPER_PASS);
   obj.wifiConfig(WIFI_DEFAULT_SSID, WIFI_DEFAULT_PASS);
   obj.onConnect = callbackOnConnect;
   obj.onReconnect = callbackOnReconnect;
-  obj.onWiFiTimeout = callbackOnWiFiTimeout;
+  obj.onAPConfigTimeout = callbackOnAPConfigTimeout;
+  obj.onWiFiConnectTimeout = callbackOnWiFiConnectTimeout;
   ESP.wdtEnable(8000);
   obj.init(client,true,true,SerialDEBUG); //pass client, set clean_session=true, use debug.
   delay(10);
@@ -90,13 +91,14 @@ void callbackOnReconnect()
   initSubscribe();
 }
 
-void callbackOnAPTimeout() {
+void callbackOnAPConfigTimeout() {
   //ESP.deepSleep(300000000); // sleep for 5 minutes
   obj.restart();
 }
 
-void callbackOnWiFiTimeout() {
-  ESP.deepSleep(300000000); // sleep for 5 minutes
+void callbackOnWiFiConnectTimeout() {
+  obj.restart();
+  //ESP.deepSleep(300000000); // sleep for 5 minutes
 }
 
 void bellMe()
