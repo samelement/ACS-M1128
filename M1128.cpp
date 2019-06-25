@@ -51,6 +51,7 @@ void M1128::init(PubSubClient &mqttClient, bool cleanSession, bool setWill, Stre
   _mqttCleanSession = cleanSession;
   _mqttSetWill = setWill;
   if (!_checkResetButton()) _initNetwork(false);
+  if (_serialDebug) _serialDebug->println(F("End of initialization, ready for loop.."));
 }
 
 void M1128::loop() {
@@ -65,27 +66,27 @@ void M1128::loop() {
   
   _checkResetButton();
   
-  if (_softAPStartMillis>0 && apTimeout > 0) { // if WiFi in SoftAP mode
+  if (_softAPStartMillis>0 && apConfigTimeout > 0) { // if WiFi in SoftAP mode
     _softAPCurrentMillis = millis();
-    if ((_softAPCurrentMillis - _softAPStartMillis) > apTimeout) {
+    if ((_softAPCurrentMillis - _softAPStartMillis) > apConfigTimeout) {
       _softAPStartMillis = 0;
-      if (_serialDebug) _serialDebug->println(F("Exceeded apTimeout.."));
-      if (onAPTimeout!=NULL) {
-        if (_serialDebug) _serialDebug->println(F("Triggering onAPTimeout().."));
-        onAPTimeout();
+      if (_serialDebug) _serialDebug->println(F("Exceeded apConfigTimeout.."));
+      if (onAPConfigTimeout!=NULL) {
+        if (_serialDebug) _serialDebug->println(F("Triggering onAPConfigTimeout().."));
+        onAPConfigTimeout();
       } else {
         if (_serialDebug) _serialDebug->println(F("Going to deep sleep.."));
         ESP.deepSleep(0);
       }
     }
-  } else if (WiFi.status() != WL_CONNECTED && wifiTimeout > 0) { // if not in AP Mode (normal mode) but fail to connect to wifi and there is a fail timeout
+  } else if (WiFi.status() != WL_CONNECTED && wifiConnectTimeout > 0) { // if not in AP Mode (normal mode) but fail to connect to wifi and there is a fail timeout
     _wifiFailCurrentMillis = millis();
-    if ((_wifiFailCurrentMillis - _wifiFailStartMillis) > wifiTimeout) {
+    if ((_wifiFailCurrentMillis - _wifiFailStartMillis) > wifiConnectTimeout) {
       _wifiFailStartMillis = 0;
-      if (_serialDebug) _serialDebug->println(F("Exceeded wifiFailTimeout.."));
-      if (onWiFiTimeout!=NULL) {
-        if (_serialDebug) _serialDebug->println(F("Triggering onWiFiTimeout().."));
-        onWiFiTimeout();
+      if (_serialDebug) _serialDebug->println(F("Exceeded wifiConnectTimeout.."));
+      if (onWiFiConnectTimeout!=NULL) {
+        if (_serialDebug) _serialDebug->println(F("Triggering onWiFiConnectTimeout().."));
+        onWiFiConnectTimeout();
       } else {
         if (_serialDebug) _serialDebug->println(F("Going to deep sleep.."));
         ESP.deepSleep(0);
@@ -158,11 +159,6 @@ void M1128::_initNetwork(bool goAP) {
         if (autoAP && _serialDebug) _serialDebug->println(F("autoAP is enable, I will go to AP now..!"));      
         if (goAP && _serialDebug) _serialDebug->println(F("Factory reset pressed, I will go to AP now..!"));      
         _wifiSoftAP();
-      }
-      else {
-        if (_serialDebug) _serialDebug->println(F("Neither autoAP or factory reset pressed, I will sleep for apTimeout ms..!"));
-        ESP.deepSleep(wifiFailSleep*1000);
-        ESP.restart();
       }
     }
   }
