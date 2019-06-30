@@ -152,15 +152,4 @@ In every newly created project, there are 2 steps to upload your project:
 
 # License
 
-This code is released under the MIT License.
-
-Arduino IDE is developed and maintained by the Arduino team. The IDE is licensed under GPL.
-ESP8266 core includes an xtensa gcc toolchain, which is also under GPL.
-Esptool written by Christian Klippel is licensed under GPLv2, currently maintained by Ivan Grokhotkov: https://github.com/igrr/esptool-ck.
-Espressif SDK included in this build is under Espressif MIT License.
-ESP8266 core files are licensed under LGPL.
-SPI Flash File System (SPIFFS) written by Peter Andersson is used in this project. It is distributed under MIT license.
-umm_malloc memory management library written by Ralph Hempel is used in this project. It is distributed under MIT license.
-axTLS library written by Cameron Rich, built from https://github.com/igrr/axtls-8266, is used in this project. It is distributed under BSD license.
-BearSSL library written by Thomas Pornin, built from https://github.com/earlephilhower/bearssl-esp8266, is used in this project. It is distributed under the MIT License.
-pubsubclient is used in this project. It is distributed under MIT license.
+This code is released under the GPL License.
