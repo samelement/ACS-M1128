@@ -40,8 +40,8 @@ class M1128 {
 
     uint8_t pinReset = PIN_RESET;
     uint8_t wifiConnectRetry = WIFI_RETRY;
-    uint16_t apConfigTimeout = AP_TIMEOUT;
-    uint16_t wifiConnectTimeout = WIFI_FAIL_TIMEOUT;
+    uint32_t apConfigTimeout = AP_TIMEOUT;
+    uint32_t wifiConnectTimeout = WIFI_FAIL_TIMEOUT;
     void init(PubSubClient &mqttClient);
     void init(PubSubClient &mqttClient, bool cleanSession);
     void init(PubSubClient &mqttClient, bool cleanSession, bool setWill);
@@ -81,10 +81,10 @@ class M1128 {
     bool _mqttCleanSession = false;
     bool _mqttSetWill = true;
     uint8_t _wifiConnectRetryVal = 0;
-    unsigned int _softAPStartMillis = 0;
-    unsigned int _softAPCurrentMillis = 0;
-    unsigned int _wifiFailStartMillis = 0;
-    unsigned int _wifiFailCurrentMillis = 0;
+    uint32_t _softAPStartMillis = 0;
+    uint32_t _softAPCurrentMillis = 0;
+    uint32_t _wifiFailStartMillis = 0;
+    uint32_t _wifiFailCurrentMillis = 0;
         
     uint8_t _pinResetButtonLast = HIGH;
     char _topic_buf[PAYLOAD_BUFFER_SIZE];

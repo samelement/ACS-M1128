@@ -68,7 +68,7 @@ void M1128::loop() {
   
   if (_softAPStartMillis>0 && apConfigTimeout > 0) { // if WiFi in SoftAP mode
     _softAPCurrentMillis = millis();
-    if ((_softAPCurrentMillis - _softAPStartMillis) > apConfigTimeout) {
+    if ((_softAPCurrentMillis - _softAPStartMillis) > apConfigTimeout) {   
       _softAPStartMillis = 0;
       if (_serialDebug) _serialDebug->println(F("Exceeded apConfigTimeout.."));
       if (onAPConfigTimeout!=NULL) {
@@ -220,7 +220,6 @@ bool M1128::_wifiConnect(const char* ssid, const char* password) {
 }
 
 bool M1128::_wifiSoftAP() {
-  _softAPStartMillis = millis();
   bool res = false;
   if (_serialDebug) {
     _serialDebug->println(F("Setting up default Soft AP.."));        
@@ -244,6 +243,7 @@ bool M1128::_wifiSoftAP() {
       _serialDebug->println(WiFi.softAPIP());   
     } else _serialDebug->println(F("Soft AP setup failed!"));
   }
+  if (res) _softAPStartMillis = millis();
   return res;
 }
 
@@ -306,6 +306,7 @@ void M1128::_handleWifiConfig() {
     }
     _wifi_ap_server.send(200);
     WiFi.softAPdisconnect(true);
+    _softAPStartMillis = 0;
     if (_wifiConnect(_wifi_ap_server.arg("ssid").c_str(),_wifi_ap_server.arg("password").c_str())) _mqttConnect();
     if (onWiFiConfigChanged!=NULL) onWiFiConfigChanged();
   } else _handleFileRead(_wifi_ap_server.uri());
