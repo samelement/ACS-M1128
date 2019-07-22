@@ -45,16 +45,27 @@ HardwareSerial *SerialDEBUG = &Serial; // optional if you wish to debug
 M1128 obj;
 ```
 
-### Initialize objects
+### Basic Initialization
 ```sh
-void setup() {
+void setup() {  
+  obj.wifiClientSecure = &wclientSecure;    
+  // pass your developer details
+  obj.devConfig(DEVELOPER_ID,DEVELOPER_USER,DEVELOPER_PASS);
+  // pass your default SSID config. Optional params are: IPAddress localip, IPAddress gateway, IPAddress subnet
+  obj.wifiConfig(WIFI_DEFAULT_SSID,WIFI_DEFAULT_PASS); 
+  obj.init(client); // pass client
+}
+```
+
+### More Initialization
+```sh
   // If you want to debug, initialize your SerialDEBUG
   SerialDEBUG->begin(DEBUG_BAUD, SERIAL_8N1, SERIAL_TX_ONLY);
   while (!SerialDEBUG);
   SerialDEBUG->println("Initializing..");
   
   pinMode(3, FUNCTION_3); // this will set GPIO3 (RX) to be used as input
-  obj.setId("ABCDEXFGH"); // optional to set device serial number, default is retrieved from ESP.getChipId()
+  obj.setId("ABCDEXFGH"); // set device serial number, default is retrieved from ESP.getChipId()
 
   // When ESP is sleeping, pin reset will only works when device is waking up.
   // When ESP is sleeping forever, the only way to make the pin factory reset to work is by trigger it while you turn it on. 
@@ -65,19 +76,8 @@ void setup() {
   // Other way to go to AP is by trigger pin reset.
   obj.autoAP = false;
   
-  obj.wifiConnectRetry = 2; // optional set wifi connect trial before going to AP mode, default is 1  
-  obj.wifiClientSecure = &wclientSecure;  
-  
-  // pass your developer details
-  obj.devConfig(DEVELOPER_ID,DEVELOPER_USER,DEVELOPER_PASS);
-
-  // pass your default SSID config. Optional params are: IPAddress localip, IPAddress gateway, IPAddress subnet
-  obj.wifiConfig(WIFI_DEFAULT_SSID,WIFI_DEFAULT_PASS); 
-  
-  obj.onReset =  callbackOnReset; // optional callback
-  obj.onConnect = callbackOnConnect; // optional callback
-  obj.onReconnect = callbackOnReconnect; // optional callback
-  obj.onWiFiConfigChanged = callbackOnWiFiConfigChanged; // optional callback
+  // optional set wifi connect trial before going to AP mode, default is 1  
+  obj.wifiConnectRetry = 2; 
   
   // apConfigTimeout is a timeout for ESP when it works as soft AP.
   // use apConfigTimeout for low battery powered device to make sure ESP not work as AP too long. 
@@ -98,9 +98,13 @@ void setup() {
   // if this callback is not defined then after timeout it will goes to deep sleep.
   obj.onWiFiConnectTimeout = callbackOnWiFiConnectTimeout; 
   
+  obj.onReset =  callbackOnReset; // optional callback
+  obj.onConnect = callbackOnConnect; // optional callback
+  obj.onReconnect = callbackOnReconnect; // optional callback
+  obj.onWiFiConfigChanged = callbackOnWiFiConfigChanged; // optional callback
+
   ESP.wdtEnable(8000); // if you wish to enable watchdog
   obj.init(client,true,true,SerialDEBUG); // pass client, set clean_session=true, set lwt=true, use debug (optional).
-}
 ```
 
 ### Define necessary callbacks you wish to use
