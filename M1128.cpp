@@ -182,7 +182,7 @@ bool M1128::_wifiConnect() {
 bool M1128::_wifiConnect(const char* ssid, const char* password) {
   bool res = false;
   WiFi.mode(WIFI_STA);
-  if (ssid!=NULL && password!=NULL) {
+  if (ssid!=NULL) {
     _startWiFi = true;
     if (_serialDebug) {
       _serialDebug->println(F("Connecting to WiFi setting:"));
@@ -191,6 +191,7 @@ bool M1128::_wifiConnect(const char* ssid, const char* password) {
       _serialDebug->print(F("Password: "));
       _serialDebug->println(password);
     }
+    if (password!=NULL && strlen(password)==0) password=NULL;
     if (WiFi.status() == WL_CONNECTED) WiFi.disconnect(true);
     WiFi.begin(ssid,password);
     if (WiFi.waitForConnectResult() == WL_CONNECTED) res = true;
