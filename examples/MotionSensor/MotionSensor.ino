@@ -13,7 +13,7 @@
 #define DEBUG true
 #define DEBUG_BAUD 9600
 
-#define DEVELOPER_ID "1"
+#define DEVELOPER_ROOT "1"
 #define DEVELOPER_USER "dmI0OkvoFRLRzHu3J3tEWQbIXQwDeF9q"
 #define DEVELOPER_PASS "dyUiAb1cjkS8FRrokTXxtY1s4DUmOJsa"
 
@@ -36,7 +36,7 @@ void setup() {
   obj.apConfigTimeout = 300000;
   obj.wifiConnectTimeout = 120000;  
   obj.wifiClientSecure = &wclientSecure;  
-  obj.devConfig(DEVELOPER_ID,DEVELOPER_USER,DEVELOPER_PASS);
+  obj.devConfig(DEVELOPER_ROOT,DEVELOPER_USER,DEVELOPER_PASS);
   obj.wifiConfig(WIFI_DEFAULT_SSID,WIFI_DEFAULT_PASS);
   obj.onConnect = callbackOnConnect;
   obj.onAPConfigTimeout = callbackOnAPConfigTimeout;
