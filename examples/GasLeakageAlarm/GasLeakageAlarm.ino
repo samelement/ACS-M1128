@@ -10,14 +10,14 @@
 #define DEBUG true //true if you want to debug.
 #define DEBUG_BAUD 9600 //debug baud rate
 
-#define DEVELOPER_ID "1"
+#define DEVELOPER_ROOT "1"
 #define DEVELOPER_USER "dmI0OkvoFRLRzHu3J3tEWQbIXQwDeF9q"
 #define DEVELOPER_PASS "dyUiAb1cjkS8FRrokTXxtY1s4DUmOJsa"
 
 #define WIFI_DEFAULT_SSID "GasAlarm"
 #define WIFI_DEFAULT_PASS "abcd1234"
 
-#define DEVICE_PIN_DEFSTATE LOW //initial/default pin state
+#define DEVICE_PIN_DEFSTATE HIGH //initial/default pin state
 #define DEVICE_PIN_INPUT 0 //GPIO pin input
 #define DEVICE_PIN_OUTPUT 2 // pin GPIO2 for output
 
@@ -44,7 +44,7 @@ void setup() {
   obj.apConfigTimeout = 300000;
   obj.wifiConnectTimeout = 120000;
   obj.wifiClientSecure = &wclientSecure;    
-  obj.devConfig(DEVELOPER_ID,DEVELOPER_USER,DEVELOPER_PASS);
+  obj.devConfig(DEVELOPER_ROOT,DEVELOPER_USER,DEVELOPER_PASS);
   obj.wifiConfig(WIFI_DEFAULT_SSID,WIFI_DEFAULT_PASS);
   obj.onConnect = callbackOnConnect;
   obj.onReconnect = callbackOnReconnect;
@@ -120,7 +120,7 @@ void initPublish() {
     client.publish(MQTT::Publish(obj.constructTopic("$restart"), "true").set_retain(false).set_qos(1));
     client.publish(MQTT::Publish(obj.constructTopic("$nodes"), "sensor").set_retain(false).set_qos(1));
   
-  //define node "bell"
+  //define node "sensor"
     client.publish(MQTT::Publish(obj.constructTopic("sensor/$name"), "Sensor").set_retain(false).set_qos(1));
     client.publish(MQTT::Publish(obj.constructTopic("sensor/$type"), "Sensor-01").set_retain(false).set_qos(1));
     client.publish(MQTT::Publish(obj.constructTopic("sensor/$properties"), "lpg").set_retain(false).set_qos(1));
