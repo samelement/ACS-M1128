@@ -34,7 +34,7 @@ Example connection below is done for ESP8266-01. You may need to made some adjus
 #define DEVELOPER_PASS "<insert your API Device password>"
 
 #define WIFI_DEFAULT_SSID "MySmartDevice" // create your own custom SSID
-#define WIFI_DEFAULT_PASS "1234" // put a password
+#define WIFI_DEFAULT_PASS "abcd1234" // put a password 8-63 chars.
 ```
 
 ### Define necessary objects
