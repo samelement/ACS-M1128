@@ -20,10 +20,8 @@
 #define WIFI_DEFAULT_SSID "SmartMotion"
 #define WIFI_DEFAULT_PASS "abcd1234"
 
-WiFiClientSecure wclientSecure;
-PubSubClient client(wclientSecure,MQTT_BROKER_HOST,MQTT_BROKER_PORT_TLS);
 HardwareSerial *SerialDEBUG = &Serial;
-M1128 obj;
+M1128 iot;
 
 void setup() {
   if (DEBUG) {
@@ -32,30 +30,33 @@ void setup() {
     SerialDEBUG->println("Initializing..");
   }
   pinMode(3, FUNCTION_3);
-  obj.pinReset = 3;
-  obj.apConfigTimeout = 300000;
-  obj.wifiConnectTimeout = 120000;  
-  obj.wifiClientSecure = &wclientSecure;  
-  obj.devConfig(DEVELOPER_ROOT,DEVELOPER_USER,DEVELOPER_PASS);
-  obj.wifiConfig(WIFI_DEFAULT_SSID,WIFI_DEFAULT_PASS);
-  obj.onConnect = callbackOnConnect;
-  obj.onAPConfigTimeout = callbackOnAPConfigTimeout;
-  obj.onWiFiConnectTimeout = callbackOnWiFiConnectTimeout;  
+  iot.pinReset = 3;
+  iot.prod = false;
+  iot.cleanSession = true;
+  iot.setWill = false; //don't use lwt
+  iot.apConfigTimeout = 300000;
+  iot.wifiConnectTimeout = 120000;
+  iot.devConfig(DEVELOPER_ROOT,DEVELOPER_USER,DEVELOPER_PASS);
+  iot.wifiConfig(WIFI_DEFAULT_SSID,WIFI_DEFAULT_PASS);
+  
+  iot.onConnect = callbackOnConnect;
+  iot.onAPConfigTimeout = callbackOnAPConfigTimeout;
+  iot.onWiFiConnectTimeout = callbackOnWiFiConnectTimeout;  
   ESP.wdtEnable(8000);  
-  obj.init(client,true,false,SerialDEBUG); //pass client, set clean_session=true, don't use lwt, use debug.
+  iot.init(DEBUG?SerialDEBUG:NULL);
   delay(10);
 }
 
 void loop() {
   yield();
   ESP.wdtFeed();
-  if (!obj.isReady) obj.loop();
+  if (!iot.isReady) iot.loop();
 }
 
 void callbackOnConnect() {
-  client.publish(MQTT::Publish(obj.constructTopic("sensor/motion"), "true").set_retain(false).set_qos(1)); 
+  iot.mqtt->publish(iot.constructTopic("sensor/motion"), "true", false); 
   initPublish();    
-  client.publish(MQTT::Publish(obj.constructTopic("$state"), "sleeping").set_retain().set_qos(1)); 
+  iot.mqtt->publish(iot.constructTopic("$state"), "sleeping", true); 
   ESP.deepSleep(0);
 }
 
@@ -68,28 +69,28 @@ void callbackOnWiFiConnectTimeout() {
 }
 
 void initPublish() { 
-  if (client.connected()) {    
-    client.publish(MQTT::Publish(obj.constructTopic("$state"), "init").set_retain(false).set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("$sammy"), "1.0.0").set_retain(false).set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("$name"), "Motion Sensor").set_retain(false).set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("$model"), "SAM-MS01").set_retain(false).set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("$mac"), WiFi.macAddress()).set_retain(false).set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("$localip"), WiFi.localIP().toString()).set_retain(false).set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("$fw/name"), "MS01").set_retain(false).set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("$fw/version"), "1.00").set_retain(false).set_qos(1));    
-    client.publish(MQTT::Publish(obj.constructTopic("$nodes"), "sensor").set_retain(false).set_qos(1));
+  if (iot.mqtt->connected()) {    
+    iot.mqtt->publish(iot.constructTopic("$state"), "init", false);
+    iot.mqtt->publish(iot.constructTopic("$sammy"), "1.0.0", false);
+    iot.mqtt->publish(iot.constructTopic("$name"), "Motion Sensor", false);
+    iot.mqtt->publish(iot.constructTopic("$model"), "SAM-MS01", false);
+    iot.mqtt->publish(iot.constructTopic("$mac"), WiFi.macAddress().c_str(), false);
+    iot.mqtt->publish(iot.constructTopic("$localip"), WiFi.localIP().toString().c_str(), false);
+    iot.mqtt->publish(iot.constructTopic("$fw/name"), "MS01", false);
+    iot.mqtt->publish(iot.constructTopic("$fw/version"), "1.00", false);    
+    iot.mqtt->publish(iot.constructTopic("$nodes"), "sensor", false);
   
   //define node "bell"
-    client.publish(MQTT::Publish(obj.constructTopic("sensor/$name"), "Sensor").set_retain(false).set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("sensor/$type"), "Sensor-01").set_retain(false).set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("sensor/$properties"), "motion").set_retain(false).set_qos(1));
+    iot.mqtt->publish(iot.constructTopic("sensor/$name"), "Sensor", false);
+    iot.mqtt->publish(iot.constructTopic("sensor/$type"), "Sensor-01", false);
+    iot.mqtt->publish(iot.constructTopic("sensor/$properties"), "motion", false);
 
-    client.publish(MQTT::Publish(obj.constructTopic("sensor/motion/$name"), "Motion Sensor").set_retain(false).set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("sensor/motion/$settable"), "false").set_retain(false).set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("sensor/motion/$retained"), "false").set_retain(false).set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("sensor/motion/$datatype"), "boolean").set_retain(false).set_qos(1));  
+    iot.mqtt->publish(iot.constructTopic("sensor/motion/$name"), "Motion Sensor", false);
+    iot.mqtt->publish(iot.constructTopic("sensor/motion/$settable"), "false", false);
+    iot.mqtt->publish(iot.constructTopic("sensor/motion/$retained"), "false", false);
+    iot.mqtt->publish(iot.constructTopic("sensor/motion/$datatype"), "boolean", false);  
 
   // set device to ready
-    client.publish(MQTT::Publish(obj.constructTopic("$state"), "ready").set_retain(false).set_qos(1));  
+    iot.mqtt->publish(iot.constructTopic("$state"), "ready", false);  
   }
 }
