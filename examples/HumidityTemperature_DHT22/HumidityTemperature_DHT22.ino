@@ -22,10 +22,8 @@
 #define WIFI_DEFAULT_SSID "SmartDHT22"
 #define WIFI_DEFAULT_PASS "abcd1234"
 
-WiFiClientSecure wclientSecure;
-PubSubClient client(wclientSecure, MQTT_BROKER_HOST, MQTT_BROKER_PORT_TLS);
 HardwareSerial *SerialDEBUG = &Serial;
-M1128 obj;
+M1128 iot;
 
 #define DHTPIN            0         // Pin which is connected to the DHT sensor.
 #define DHTTYPE           DHT22     // DHT 22 (AM2302)
@@ -40,29 +38,33 @@ void setup() {
     while (!SerialDEBUG);
     SerialDEBUG->println("Initializing..");
   }
-  client.set_callback(callbackOnReceive);
   pinMode(DHTPIN,INPUT);
   pinMode(3, FUNCTION_3);
-  obj.pinReset = 3;
-  obj.apConfigTimeout = 300000;
-  obj.wifiConnectTimeout = 120000;
-  obj.wifiClientSecure = &wclientSecure;
-  obj.devConfig(DEVELOPER_ROOT,DEVELOPER_USER,DEVELOPER_PASS);
-  obj.wifiConfig(WIFI_DEFAULT_SSID,WIFI_DEFAULT_PASS);
-  obj.onConnect = callbackOnConnect;  
-  obj.onReconnect = callbackOnReconnect;
-  obj.onAPConfigTimeout = callbackOnAPConfigTimeout;
-  obj.onWiFiConnectTimeout = callbackOnWiFiConnectTimeout;
-  ESP.wdtEnable(8000);
+  iot.pinReset = 3;
+  iot.prod = false;
+  iot.cleanSession = true;
+  iot.setWill = true;
+  iot.apConfigTimeout = 300000;
+  iot.wifiConnectTimeout = 120000;
+  iot.devConfig(DEVELOPER_ROOT,DEVELOPER_USER,DEVELOPER_PASS);
+  iot.wifiConfig(WIFI_DEFAULT_SSID,WIFI_DEFAULT_PASS);
+  
+  iot.onReceive = callbackOnReceive;
+  iot.onConnect = callbackOnConnect;
+  iot.onReconnect = callbackOnReconnect;
+  iot.onAPConfigTimeout = callbackOnAPConfigTimeout;
+  iot.onWiFiConnectTimeout = callbackOnWiFiConnectTimeout;  
+  
+  ESP.wdtEnable(8000);      
   initSensors();
-  obj.init(client,true,true,SerialDEBUG); //pass client, set clean_session=true, set lwt=true, use debug.
-  delay(10);
+  iot.init(DEBUG?SerialDEBUG:NULL);
+  delay(10);  
 }
 
 void loop() {
   ESP.wdtFeed();
-  obj.loop();
-  if (obj.isReady) measureSensors();
+  iot.loop();
+  if (iot.isReady) measureSensors();
 }
 
 void initSensors() {
@@ -112,7 +114,7 @@ void measureSensors() {
       SerialDEBUG->print(event.temperature);
       SerialDEBUG->println(" °C");
       dtostrf(event.temperature, 4, 2, result);
-      client.publish(MQTT::Publish(obj.constructTopic("sensor/temp"), result).set_retain(true).set_qos(1));
+      iot.mqtt->publish(iot.constructTopic("sensor/temp"), result, true);
     }
     // Get humidity event and print its value.
     dht.humidity().getEvent(&event);
@@ -124,20 +126,24 @@ void measureSensors() {
       SerialDEBUG->print(event.relative_humidity);
       SerialDEBUG->println("%");
       dtostrf(event.relative_humidity, 4, 2, result);
-      client.publish(MQTT::Publish(obj.constructTopic("sensor/humid"), result).set_retain(true).set_qos(1));
+      iot.mqtt->publish(iot.constructTopic("sensor/humid"), result, true);
     }
   }
 }
 
-void callbackOnReceive(const MQTT::Publish& pub) {
+void callbackOnReceive(char* topic, byte* payload, unsigned int length) {
+  String strPayload;
+  strPayload.reserve(length);
+  for (uint32_t i = 0; i < length; i++) strPayload += (char)payload[i];
+
   if (DEBUG) {
     SerialDEBUG->print(F("Receiving topic: "));
-    SerialDEBUG->println(pub.topic());
+    SerialDEBUG->println(topic);
     SerialDEBUG->print("With value: ");
-    SerialDEBUG->println(pub.payload_string());
+    SerialDEBUG->println(strPayload);
   }
-  if (pub.topic()==obj.constructTopic("reset") && pub.payload_string()=="true") obj.reset();
-  else if (pub.topic()==obj.constructTopic("restart") && pub.payload_string()=="true") obj.restart();
+  if (topic==iot.constructTopic("reset") && strPayload=="true") iot.reset();
+  else if (topic==iot.constructTopic("restart") && strPayload=="true") iot.restart();
 }
 
 void callbackOnConnect() {
@@ -150,57 +156,57 @@ void callbackOnReconnect() {
 }
 
 void callbackOnAPConfigTimeout() {
-  obj.restart();
+  iot.restart();
 }
 
 void callbackOnWiFiConnectTimeout() {
-  ESP.deepSleep(300000000); // sleep for 5 minutes
+  iot.restart();
+  //ESP.deepSleep(300000000); // sleep for 5 minutes
 }
 
 void publishState(const char* state) {
-  if (client.connected()) client.publish(MQTT::Publish(obj.constructTopic("$state"), state).set_retain().set_qos(1));  
+  if (iot.mqtt->connected()) iot.mqtt->publish(iot.constructTopic("$state"), state, true);  
 }
 
 void initPublish() {
-  if (client.connected()) {    
-    client.publish(MQTT::Publish(obj.constructTopic("$state"), "init").set_retain(false).set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("$sammy"), "1.0.0").set_retain(false).set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("$name"), "Smart DHT22").set_retain(false).set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("$model"), "SAM-DHT22").set_retain(false).set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("$mac"), WiFi.macAddress()).set_retain(false).set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("$localip"), WiFi.localIP().toString()).set_retain(false).set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("$fw/name"), "DHT22").set_retain(false).set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("$fw/version"), "1.00").set_retain(false).set_qos(1));    
-    client.publish(MQTT::Publish(obj.constructTopic("$reset"), "true").set_retain(false).set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("$restart"), "true").set_retain(false).set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("$nodes"), "sensor").set_retain(false).set_qos(1));
+  if (iot.mqtt->connected()) {    
+    iot.mqtt->publish(iot.constructTopic("$state"), "init", false);
+    iot.mqtt->publish(iot.constructTopic("$sammy"), "1.0.0", false);
+    iot.mqtt->publish(iot.constructTopic("$name"), "Smart DHT22", false);
+    iot.mqtt->publish(iot.constructTopic("$model"), "SAM-DHT22", false);
+    iot.mqtt->publish(iot.constructTopic("$mac"), WiFi.macAddress().c_str(), false);
+    iot.mqtt->publish(iot.constructTopic("$localip"), WiFi.localIP().toString().c_str(), false);
+    iot.mqtt->publish(iot.constructTopic("$fw/name"), "DHT22", false);
+    iot.mqtt->publish(iot.constructTopic("$fw/version"), "1.00", false);    
+    iot.mqtt->publish(iot.constructTopic("$reset"), "true", false);
+    iot.mqtt->publish(iot.constructTopic("$restart"), "true", false);
+    iot.mqtt->publish(iot.constructTopic("$nodes"), "sensor", false);
   
   //define node "sensor"
-    client.publish(MQTT::Publish(obj.constructTopic("sensor/$name"), "Sensor").set_retain(false).set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("sensor/$type"), "Sensor-01").set_retain(false).set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("sensor/$properties"), "temp,humid").set_retain(false).set_qos(1));
+    iot.mqtt->publish(iot.constructTopic("sensor/$name"), "Sensor", false);
+    iot.mqtt->publish(iot.constructTopic("sensor/$type"), "Sensor-01", false);
+    iot.mqtt->publish(iot.constructTopic("sensor/$properties"), "temp,humid", false);
 
-    client.publish(MQTT::Publish(obj.constructTopic("sensor/temp/$name"), "Temperature").set_retain(false).set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("sensor/temp/$settable"), "false").set_retain(false).set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("sensor/temp/$retained"), "true").set_retain(false).set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("sensor/temp/$datatype"), "float").set_retain(false).set_qos(1));  
-    client.publish(MQTT::Publish(obj.constructTopic("sensor/temp/$unit"), "°C").set_retain(false).set_qos(1));  
-    client.publish(MQTT::Publish(obj.constructTopic("sensor/temp/$format"), "-40:125").set_retain(false).set_qos(1));  
+    iot.mqtt->publish(iot.constructTopic("sensor/temp/$name"), "Temperature", false);
+    iot.mqtt->publish(iot.constructTopic("sensor/temp/$settable"), "false", false);
+    iot.mqtt->publish(iot.constructTopic("sensor/temp/$retained"), "true", false);
+    iot.mqtt->publish(iot.constructTopic("sensor/temp/$datatype"), "float", false);  
+    iot.mqtt->publish(iot.constructTopic("sensor/temp/$unit"), "°C", false);  
+    iot.mqtt->publish(iot.constructTopic("sensor/temp/$format"), "-40:125", false);  
 
-    client.publish(MQTT::Publish(obj.constructTopic("sensor/humid/$name"), "Humidity").set_retain(false).set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("sensor/humid/$settable"), "false").set_retain(false).set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("sensor/humid/$retained"), "true").set_retain(false).set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("sensor/humid/$datatype"), "float").set_retain(false).set_qos(1));    
-    client.publish(MQTT::Publish(obj.constructTopic("sensor/humid/$unit"), "%").set_retain(false).set_qos(1));  
-    client.publish(MQTT::Publish(obj.constructTopic("sensor/humid/$format"), "0:100").set_retain(false).set_qos(1));  
+    iot.mqtt->publish(iot.constructTopic("sensor/humid/$name"), "Humidity", false);
+    iot.mqtt->publish(iot.constructTopic("sensor/humid/$settable"), "false", false);
+    iot.mqtt->publish(iot.constructTopic("sensor/humid/$retained"), "true", false);
+    iot.mqtt->publish(iot.constructTopic("sensor/humid/$datatype"), "float", false);    
+    iot.mqtt->publish(iot.constructTopic("sensor/humid/$unit"), "%", false);  
+    iot.mqtt->publish(iot.constructTopic("sensor/humid/$format"), "0:100", false);  
   }
 }
 
 void initSubscribe() {
-  if (client.connected()) {
-    //default, must exist
-    client.subscribe(MQTT::Subscribe().add_topic(obj.constructTopic("reset"),2));  
-    client.subscribe(MQTT::Subscribe().add_topic(obj.constructTopic("restart"),2));  
+  if (iot.mqtt->connected()) { 
+    iot.mqtt->subscribe(iot.constructTopic("reset"),1);  
+    iot.mqtt->subscribe(iot.constructTopic("restart"),1);  
   }
   publishState("ready");
 }
