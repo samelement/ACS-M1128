@@ -8,8 +8,7 @@ SAM Element is an IoT platform. Visit our [website](https://www.samelement.com) 
   - [ESP8266 Documentation](https://arduino-esp8266.readthedocs.io/en/latest/index.html)
   - [Arduino core for ESP8266 WiFi chip](https://github.com/esp8266/Arduino)
   - [Arduino ESP8266 filesystem uploader](https://github.com/esp8266/arduino-esp8266fs-plugin)
-  - [PubSubClient](https://github.com/Imroy/pubsubclient)
-  - [SPIFFSReadServer by Ryan Downing](https://github.com/r-downing/SPIFFSReadServer)
+  - [PubSubClient](https://github.com/knolleary/pubsubclient)
 
 ## ESP8266 WiFi Connectivity
   - Support for ESP8266 board.
@@ -24,12 +23,15 @@ SAM Element is an IoT platform. Visit our [website](https://www.samelement.com) 
 
 # How to Use
 
+### IMPORTANT
+You need to edit MQTT_MAX_PACKET_SIZE in file PubSubClient.h in PubSubClient library. Change the size to at least 1024. Depends on the available memory of your board, you can adjust the value higher to suit to your payload size. Recommeded is 2048. For JWT access token alone it will take space of 956. 
+
 Example connection below is done for ESP8266-01. You may need to made some adjustment for different ESP8266 series.
 ### Define default values
 ```sh
 // get your account details in your dashboard
 // DO NOT use existing developer user & pass in example as we do not guarantee it will work and for how long.
-#define DEVELOPER_ID "<insert your developer id>" 
+#define DEVELOPER_ROOT "<insert your developer root>" 
 #define DEVELOPER_USER "<insert your API Device username>"
 #define DEVELOPER_PASS "<insert your API Device password>"
 
@@ -37,27 +39,24 @@ Example connection below is done for ESP8266-01. You may need to made some adjus
 #define WIFI_DEFAULT_PASS "abcd1234" // put a password 8-63 chars.
 ```
 
-### Define necessary objects
+### Define IoT object & other necessary objects
 ```sh
-WiFiClientSecure wclientSecure;
-PubSubClient client(wclientSecure, MQTT_BROKER_HOST, MQTT_BROKER_PORT_TLS);
 HardwareSerial *SerialDEBUG = &Serial; // optional if you wish to debug
-M1128 obj;
+M1128 iot;
 ```
 
 ### Basic Initialization
 ```sh
 void setup() {  
-  obj.wifiClientSecure = &wclientSecure;    
   // pass your developer details
-  obj.devConfig(DEVELOPER_ID,DEVELOPER_USER,DEVELOPER_PASS);
+  iot.devConfig(DEVELOPER_ID,DEVELOPER_USER,DEVELOPER_PASS);
   // pass your default SSID config. Optional params are: IPAddress localip, IPAddress gateway, IPAddress subnet
-  obj.wifiConfig(WIFI_DEFAULT_SSID,WIFI_DEFAULT_PASS); 
-  obj.init(client); // pass client
+  iot.wifiConfig(WIFI_DEFAULT_SSID,WIFI_DEFAULT_PASS); 
+  iot.init(); // pass client
 }
 ```
 
-### More Initialization
+### Advanced Initialization
 ```sh
   // If you want to debug, initialize your SerialDEBUG
   SerialDEBUG->begin(DEBUG_BAUD, SERIAL_8N1, SERIAL_TX_ONLY);
@@ -65,50 +64,63 @@ void setup() {
   SerialDEBUG->println("Initializing..");
   
   pinMode(3, FUNCTION_3); // this will set GPIO3 (RX) to be used as input
-  obj.setId("ABCDEXFGH"); // set device serial number, default is retrieved from ESP.getChipId()
+  iot.setId("ABCDEXFGH"); // set device serial number, default is retrieved from ESP.getChipId()
 
   // When ESP is sleeping, pin reset will only works when device is waking up.
   // When ESP is sleeping forever, the only way to make the pin factory reset to work is by trigger it while you turn it on. 
-  obj.pinReset = 3; // optional to set the factory reset pin to GPIO3, default is GPIO3
+  iot.pinReset = 3; // optional to set the factory reset pin to GPIO3, default is GPIO3
   
   // autoAP is an option to allow ESP automatically set up as AP. Default value is false
   // If set to true, when first turn on, it will go to AP if wifi connect failed.
   // Other way to go to AP is by trigger pin reset.
-  obj.autoAP = false;
+  iot.autoAP = false;
+  
+  //set whether you want to use sandbox or production server. default is sandbox (prod=false).
+  iot.prod = true;
+  
+  //set whether mqtt will init in clean session. default  is false.
+  iot.cleanSession = true;
+  
+  //set whether you like to use LWT message. default is true.
+  iot.setWill = true;
   
   // optional set wifi connect trial before going to AP mode, default is 1  
-  obj.wifiConnectRetry = 2; 
+  iot.wifiConnectRetry = 2; 
   
   // apConfigTimeout is a timeout for ESP when it works as soft AP.
   // use apConfigTimeout for low battery powered device to make sure ESP not work as AP too long. 
   // apConfigTimeout is in ms. Default is 0, which means no timeout.
   // When apConfigTimeout has passed, it will trigger onAPConfigTimeout.
-  obj.apConfigTimeout = 300000;
+  iot.apConfigTimeout = 300000;
 
   // if apConfigTimeout > 0 and and apConfigTimeout has passed, it will trigger a callback you can define here.
   // if this callback is not defined then after timeout it will goes to deep sleep.
-  obj.onAPConfigTimeout = callbackOnAPConfigTimeout; 
+  iot.onAPConfigTimeout = callbackOnAPConfigTimeout; 
   
   // wifiConnectTimeout is a timeout for ESP to keep try to connect to a WiFi AP.
   // wifiConnectTimeout is in ms. Default is 0, which means no timeout.
   // When wifiConnectTimeout has passed, it will trigger onWiFiConnectTimeout.
-  obj.wifiConnectTimeout = 120000;
+  iot.wifiConnectTimeout = 120000;
 
   // if wifiConnectTimeout > 0 and and wifiTimeout has passed, it will trigger a callback you can define here.
   // if this callback is not defined then after timeout it will goes to deep sleep.
-  obj.onWiFiConnectTimeout = callbackOnWiFiConnectTimeout; 
+  iot.onWiFiConnectTimeout = callbackOnWiFiConnectTimeout; 
   
-  obj.onReset =  callbackOnReset; // optional callback
-  obj.onConnect = callbackOnConnect; // optional callback
-  obj.onReconnect = callbackOnReconnect; // optional callback
-  obj.onWiFiConfigChanged = callbackOnWiFiConfigChanged; // optional callback
+  iot.onReceive = callbackOnReceive; // optional callback when message received
+  iot.onReset =  callbackOnReset; // optional callback when device factory reset pressed
+  iot.onConnect = callbackOnConnect; // optional callback when connected to server
+  iot.onReconnect = callbackOnReconnect; // optional callback when reconnected to server
+  iot.onWiFiConfigChanged = callbackOnWiFiConfigChanged; // optional callback when wifi config changed
 
   ESP.wdtEnable(8000); // if you wish to enable watchdog
-  obj.init(client,true,true,SerialDEBUG); // pass client, set clean_session=true, set lwt=true, use debug (optional).
+  iot.init(SerialDEBUG); //use debug (optional).
 ```
 
 ### Define necessary callbacks you wish to use
 ```sh
+void callbackOnReceive(char* topic, byte* payload, unsigned int length) {
+    // your codes
+}
 void callbackOnReset() {
     // your codes
 }
@@ -126,14 +138,14 @@ void callbackOnWiFiConfigChanged() {
 }
 void callbackOnAPConfigTimeout() {
     // ESP.deepSleep(0);
-    // obj.restart(); // call to restart via software
-    // obj.reset(); // call to reset the wifi configuration saved in ESP, this will trigger onReset()
+    // iot.restart(); // call to restart via software
+    // iot.reset(); // call to reset the wifi configuration saved in ESP, this will trigger onReset()
     // your codes
 }
 void callbackOnWiFiConnectTimeout() {
     // ESP.deepSleep(0);
-    // obj.restart(); // call to restart via software
-    // obj.reset(); // call to reset the wifi configuration saved in ESP, this will trigger onReset()
+    // iot.restart(); // call to restart via software
+    // iot.reset(); // call to reset the wifi configuration saved in ESP, this will trigger onReset()
     // your codes
 }
 ```
@@ -142,7 +154,7 @@ void callbackOnWiFiConnectTimeout() {
 ```sh
 void loop() {
   ESP.wdtFeed(); // if you enable watchdog, you have to feed it
-  obj.loop();
+  iot.loop();
   // your other codes
 }
 ```
