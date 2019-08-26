@@ -21,10 +21,8 @@
 #define DEVICE_PIN_BUTTON_DEFSTATE HIGH // default is HIGH, it means active LOW.
 #define DEVICE_PIN_BUTTON_OUTPUT 2 // pin GPIO2 for output
 
-WiFiClientSecure wclientSecure;
-PubSubClient client(wclientSecure, MQTT_BROKER_HOST, MQTT_BROKER_PORT_TLS);
 HardwareSerial *SerialDEBUG = &Serial;
-M1128 obj;
+M1128 iot;
 
 void setup() {
   if (DEBUG) {
@@ -32,41 +30,50 @@ void setup() {
     while (!SerialDEBUG);
     SerialDEBUG->println("Initializing..");
   }
-  client.set_callback(callbackOnReceive);
   pinMode(DEVICE_PIN_BUTTON_OUTPUT,OUTPUT);
   //digitalWrite(DEVICE_PIN_BUTTON_OUTPUT, DEVICE_PIN_BUTTON_DEFSTATE);
   pinMode(3, FUNCTION_3);
-  obj.pinReset = 3;
-  obj.apConfigTimeout = 300000;
-  obj.wifiConnectTimeout = 120000;
-  obj.wifiClientSecure = &wclientSecure;
-  obj.devConfig(DEVELOPER_ROOT,DEVELOPER_USER,DEVELOPER_PASS);
-  obj.wifiConfig(WIFI_DEFAULT_SSID,WIFI_DEFAULT_PASS);
-  obj.onConnect = callbackOnConnect;  
-  obj.onReconnect = callbackOnReconnect;
-  obj.onAPConfigTimeout = callbackOnAPConfigTimeout;
-  obj.onWiFiConnectTimeout = callbackOnWiFiConnectTimeout;
+  
+  iot.pinReset = 3;
+  iot.prod = true;
+  iot.cleanSession = true;
+  iot.setWill = true;
+  iot.apConfigTimeout = 300000;
+  iot.wifiConnectTimeout = 120000;
+  iot.devConfig(DEVELOPER_ROOT,DEVELOPER_USER,DEVELOPER_PASS);
+  iot.wifiConfig(WIFI_DEFAULT_SSID,WIFI_DEFAULT_PASS);
+  
+  iot.onReceive = callbackOnReceive;
+  iot.onConnect = callbackOnConnect;  
+  iot.onReconnect = callbackOnReconnect;
+  iot.onAPConfigTimeout = callbackOnAPConfigTimeout;
+  iot.onWiFiConnectTimeout = callbackOnWiFiConnectTimeout;
+  
   ESP.wdtEnable(8000);
-  obj.init(client,true,true,SerialDEBUG); //pass client, set clean_session=true, set lwt=true, use debug.
+  iot.init(DEBUG?SerialDEBUG:NULL);
   delay(10);
 }
 
 void loop() {
   ESP.wdtFeed();
-  obj.loop();
+  iot.loop();
 }
 
-void callbackOnReceive(const MQTT::Publish& pub) {
+void callbackOnReceive(char* topic, byte* payload, unsigned int length) {
+  String strPayload;
+  strPayload.reserve(length);
+  for (uint32_t i = 0; i < length; i++) strPayload += (char)payload[i];
+
   if (DEBUG) {
     SerialDEBUG->print(F("Receiving topic: "));
-    SerialDEBUG->println(pub.topic());
+    SerialDEBUG->println(topic);
     SerialDEBUG->print("With value: ");
-    SerialDEBUG->println(pub.payload_string());
+    SerialDEBUG->println(strPayload);
   }
-  if (pub.topic()==obj.constructTopic("reset") && pub.payload_string()=="true") obj.reset();
-  else if (pub.topic()==obj.constructTopic("restart") && pub.payload_string()=="true") obj.restart();
-  else if (pub.topic()==obj.constructTopic("relay/onoff/set") && pub.payload_string()=="true") switchMe(!DEVICE_PIN_BUTTON_DEFSTATE);
-  else if (pub.topic()==obj.constructTopic("relay/onoff/set") && pub.payload_string()=="false") switchMe(DEVICE_PIN_BUTTON_DEFSTATE);
+  if (topic==iot.constructTopic("reset") && strPayload=="true") iot.reset();
+  else if (topic==iot.constructTopic("restart") && strPayload=="true") iot.restart();
+  else if (topic==iot.constructTopic("relay/onoff/set") && strPayload=="true") switchMe(!DEVICE_PIN_BUTTON_DEFSTATE);
+  else if (topic==iot.constructTopic("relay/onoff/set") && strPayload=="false") switchMe(DEVICE_PIN_BUTTON_DEFSTATE);
 }
 
 void callbackOnConnect() {
@@ -79,57 +86,55 @@ void callbackOnReconnect() {
 }
 
 void callbackOnAPConfigTimeout() {
-  obj.restart();
+  iot.restart();
 }
 
 void callbackOnWiFiConnectTimeout() {
-  obj.restart();
+  iot.restart();
   //ESP.deepSleep(300000000); // sleep for 5 minutes
 }
 
 void switchMe(bool sm) {
   digitalWrite(DEVICE_PIN_BUTTON_OUTPUT, sm);
-  client.publish(MQTT::Publish(obj.constructTopic("relay/onoff"), sm?"false":"true").set_retain().set_qos(1));   
+  if (iot.mqtt->connected()) iot.mqtt->publish(iot.constructTopic("relay/onoff"), sm?"false":"true", true);   
 }
 
 void publishState(const char* state) {
-  if (client.connected()) client.publish(MQTT::Publish(obj.constructTopic("$state"), state).set_retain().set_qos(1));  
+  if (iot.mqtt->connected()) iot.mqtt->publish(iot.constructTopic("$state"), state, true);  
 }
 
 void initPublish() {
-  if (client.connected()) {    
-    client.publish(MQTT::Publish(obj.constructTopic("$state"), "init").set_retain(false).set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("$sammy"), "1.0.0").set_retain(false).set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("$name"), "Smart Relay").set_retain(false).set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("$model"), "SAM-SMR01").set_retain(false).set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("$mac"), WiFi.macAddress()).set_retain(false).set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("$localip"), WiFi.localIP().toString()).set_retain(false).set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("$fw/name"), "WDB01").set_retain(false).set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("$fw/version"), "1.00").set_retain(false).set_qos(1));    
-    client.publish(MQTT::Publish(obj.constructTopic("$reset"), "true").set_retain(false).set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("$restart"), "true").set_retain(false).set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("$nodes"), "relay").set_retain(false).set_qos(1));
+  if (iot.mqtt->connected()) {    
+    iot.mqtt->publish(iot.constructTopic("$state"), "init", false);
+    iot.mqtt->publish(iot.constructTopic("$sammy"), "1.0.0", false);
+    iot.mqtt->publish(iot.constructTopic("$name"), "Smart Relay", false);
+    iot.mqtt->publish(iot.constructTopic("$model"), "SAM-SMR01", false);
+    iot.mqtt->publish(iot.constructTopic("$mac"), WiFi.macAddress().c_str(), false);
+    iot.mqtt->publish(iot.constructTopic("$localip"), WiFi.localIP().toString().c_str(), false);
+    iot.mqtt->publish(iot.constructTopic("$fw/name"), "WDB01", false);
+    iot.mqtt->publish(iot.constructTopic("$fw/version"), "1.00", false);    
+    iot.mqtt->publish(iot.constructTopic("$reset"), "true", false);
+    iot.mqtt->publish(iot.constructTopic("$restart"), "true", false);
+    iot.mqtt->publish(iot.constructTopic("$nodes"), "relay", false);
   
   //define node "relay"
-    client.publish(MQTT::Publish(obj.constructTopic("relay/$name"), "Relay").set_retain(false).set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("relay/$type"), "Relay-01").set_retain(false).set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("relay/$properties"), "onoff").set_retain(false).set_qos(1));
+    iot.mqtt->publish(iot.constructTopic("relay/$name"), "Relay", false);
+    iot.mqtt->publish(iot.constructTopic("relay/$type"), "Relay-01", false);
+    iot.mqtt->publish(iot.constructTopic("relay/$properties"), "onoff", false);
 
-    client.publish(MQTT::Publish(obj.constructTopic("relay/onoff/$name"), "Relay On Off").set_retain(false).set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("relay/onoff/$settable"), "true").set_retain(false).set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("relay/onoff/$retained"), "true").set_retain(false).set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("relay/onoff/$datatype"), "boolean").set_retain(false).set_qos(1));  
+    iot.mqtt->publish(iot.constructTopic("relay/onoff/$name"), "Relay On Off", false);
+    iot.mqtt->publish(iot.constructTopic("relay/onoff/$settable"), "true", false);
+    iot.mqtt->publish(iot.constructTopic("relay/onoff/$retained"), "true", false);
+    iot.mqtt->publish(iot.constructTopic("relay/onoff/$datatype"), "boolean", false);  
   }
 }
 
 void initSubscribe() {
-  if (client.connected()) {
-    //default, must exist
-    client.subscribe(MQTT::Subscribe().add_topic(obj.constructTopic("reset"),2));  
-    client.subscribe(MQTT::Subscribe().add_topic(obj.constructTopic("restart"),2));  
-
+  if (iot.mqtt->connected()) {
     // subscribe listen
-    client.subscribe(MQTT::Subscribe().add_topic(obj.constructTopic("relay/onoff/set"),2));  
+    iot.mqtt->subscribe(iot.constructTopic("reset"),1);  
+    iot.mqtt->subscribe(iot.constructTopic("restart"),1);  
+    iot.mqtt->subscribe(iot.constructTopic("relay/onoff/set"),1);  
   }
   publishState("ready");
 }
