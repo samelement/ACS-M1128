@@ -24,10 +24,8 @@
 #define DEVICE_PIN_BUTTON_INPUT 0 // pin GPIO0 for input
 #define DEVICE_PIN_BUTTON_OUTPUT 2 // pin GPio2 for output
 
-WiFiClientSecure wclientSecure;
-PubSubClient client(wclientSecure, MQTT_BROKER_HOST, MQTT_BROKER_PORT_TLS);
 HardwareSerial *SerialDEBUG = &Serial;
-M1128 obj;
+M1128 iot;
 
 bool pinButtonLastState = DEVICE_PIN_BUTTON_DEFSTATE;
 bool pinButtonCurrentState = DEVICE_PIN_BUTTON_DEFSTATE;
@@ -38,42 +36,50 @@ void setup() {
     while (!SerialDEBUG);
     SerialDEBUG->println("Initializing..");
   }
-  client.set_callback(callbackOnReceive);
   pinMode(DEVICE_PIN_BUTTON_INPUT,INPUT_PULLUP);
   pinMode(DEVICE_PIN_BUTTON_OUTPUT,OUTPUT);
   digitalWrite(DEVICE_PIN_BUTTON_OUTPUT, DEVICE_PIN_BUTTON_DEFSTATE);
   pinMode(3, FUNCTION_3);
-  obj.pinReset = 3;
-  obj.apConfigTimeout = 300000;
-  obj.wifiConnectTimeout = 120000;
-  obj.wifiClientSecure = &wclientSecure;
-  obj.devConfig(DEVELOPER_ROOT,DEVELOPER_USER,DEVELOPER_PASS);
-  obj.wifiConfig(WIFI_DEFAULT_SSID,WIFI_DEFAULT_PASS);
-  obj.onConnect = callbackOnConnect;  
-  obj.onReconnect = callbackOnReconnect;
-  obj.onAPConfigTimeout = callbackOnAPConfigTimeout;
-  obj.onWiFiConnectTimeout = callbackOnWiFiConnectTimeout;  
-  ESP.wdtEnable(8000);
-  obj.init(client,true,true,SerialDEBUG); //pass client, set clean_session=true, set lwt=true, use debug.
+  iot.pinReset = 3;
+  iot.prod = false;
+  iot.cleanSession = true;
+  iot.setWill = true;
+  iot.apConfigTimeout = 300000;
+  iot.wifiConnectTimeout = 120000;
+  iot.devConfig(DEVELOPER_ROOT,DEVELOPER_USER,DEVELOPER_PASS);
+  iot.wifiConfig(WIFI_DEFAULT_SSID,WIFI_DEFAULT_PASS);
+  
+  iot.onReceive = callbackOnReceive;
+  iot.onConnect = callbackOnConnect;
+  iot.onReconnect = callbackOnReconnect;
+  iot.onAPConfigTimeout = callbackOnAPConfigTimeout;
+  iot.onWiFiConnectTimeout = callbackOnWiFiConnectTimeout;  
+  
+  ESP.wdtEnable(8000);      
+  iot.init(DEBUG?SerialDEBUG:NULL);
   delay(10);
 }
 
 void loop() {
   ESP.wdtFeed();
-  obj.loop();
+  iot.loop();
   checkBellButton();
 }
 
-void callbackOnReceive(const MQTT::Publish& pub) {
+void callbackOnReceive(char* topic, byte* payload, unsigned int length) {
+  String strPayload;
+  strPayload.reserve(length);
+  for (uint32_t i = 0; i < length; i++) strPayload += (char)payload[i];
+
   if (DEBUG) {
     SerialDEBUG->print(F("Receiving topic: "));
-    SerialDEBUG->println(pub.topic());
+    SerialDEBUG->println(topic);
     SerialDEBUG->print("With value: ");
-    SerialDEBUG->println(pub.payload_string());
+    SerialDEBUG->println(strPayload);
   }
-  if (pub.topic()==obj.constructTopic("reset") && pub.payload_string()=="true") obj.reset();
-  else if (pub.topic()==obj.constructTopic("restart") && pub.payload_string()=="true") obj.restart();
-  else if (pub.topic()==obj.constructTopic("bell/button/set") && pub.payload_string()=="true") bellMe();
+  if (topic==iot.constructTopic("reset") && strPayload=="true") iot.reset();
+  else if (topic==iot.constructTopic("restart") && strPayload=="true") iot.restart();
+  else if (topic==iot.constructTopic("bell/button/set") && strPayload=="true") bellMe();
 }
 
 void callbackOnConnect() {
@@ -87,18 +93,18 @@ void callbackOnReconnect() {
 
 void callbackOnAPConfigTimeout() {
   //ESP.deepSleep(300000000); // sleep for 5 minutes
-  obj.restart();
+  iot.restart();
 }
 
 void callbackOnWiFiConnectTimeout() {
-  ESP.deepSleep(300000000); // sleep for 5 minutes
+  iot.restart();
+  //ESP.deepSleep(300000000); // sleep for 5 minutes
 }
 
 void checkBellButton() {
-  if (!client.connected()) return;
   pinButtonCurrentState = digitalRead(DEVICE_PIN_BUTTON_INPUT);
   if (pinButtonLastState==DEVICE_PIN_BUTTON_DEFSTATE && pinButtonCurrentState!=pinButtonLastState) {    
-    client.publish(MQTT::Publish(obj.constructTopic("bell/button"), "true").set_retain(false).set_qos(1)); 
+    if (iot.mqtt->connected()) iot.mqtt->publish(iot.constructTopic("bell/button"), "true", false); 
     delay(5000);
   }
   pinButtonLastState = pinButtonCurrentState;  
@@ -108,47 +114,44 @@ void bellMe() {
   digitalWrite(DEVICE_PIN_BUTTON_OUTPUT, !DEVICE_PIN_BUTTON_DEFSTATE);
   delay(300);
   digitalWrite(DEVICE_PIN_BUTTON_OUTPUT, DEVICE_PIN_BUTTON_DEFSTATE);
-  client.publish(MQTT::Publish(obj.constructTopic("bell/button"), "true").set_retain(false).set_qos(1));   
+  if (iot.mqtt->connected()) iot.mqtt->publish(iot.constructTopic("bell/button"), "true", false);   
 }
 
 void publishState(const char* state) {
-  if (client.connected()) client.publish(MQTT::Publish(obj.constructTopic("$state"), state).set_retain().set_qos(1));  
+  if (iot.mqtt->connected()) iot.mqtt->publish(iot.constructTopic("$state"), state, true);  
 }
 
 void initPublish() {
-  if (client.connected()) {    
-    client.publish(MQTT::Publish(obj.constructTopic("$state"), "init").set_retain(false).set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("$sammy"), "1.0.0").set_retain(false).set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("$name"), "Wireless Bell").set_retain(false).set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("$model"), "SAM-WDB01").set_retain(false).set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("$mac"), WiFi.macAddress()).set_retain(false).set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("$localip"), WiFi.localIP().toString()).set_retain(false).set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("$fw/name"), "WDB01").set_retain(false).set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("$fw/version"), "1.00").set_retain(false).set_qos(1));    
-    client.publish(MQTT::Publish(obj.constructTopic("$reset"), "true").set_retain(false).set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("$restart"), "true").set_retain(false).set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("$nodes"), "bell").set_retain(false).set_qos(1));
+  if (iot.mqtt->connected()) {    
+    iot.mqtt->publish(iot.constructTopic("$state"), "init", false);
+    iot.mqtt->publish(iot.constructTopic("$sammy"), "1.0.0", false);
+    iot.mqtt->publish(iot.constructTopic("$name"), "Wireless Bell", false);
+    iot.mqtt->publish(iot.constructTopic("$model"), "SAM-WDB01", false);
+    iot.mqtt->publish(iot.constructTopic("$mac"), WiFi.macAddress().c_str(), false);
+    iot.mqtt->publish(iot.constructTopic("$localip"), WiFi.localIP().toString().c_str(), false);
+    iot.mqtt->publish(iot.constructTopic("$fw/name"), "WDB01", false);
+    iot.mqtt->publish(iot.constructTopic("$fw/version"), "1.00", false);    
+    iot.mqtt->publish(iot.constructTopic("$reset"), "true", false);
+    iot.mqtt->publish(iot.constructTopic("$restart"), "true", false);
+    iot.mqtt->publish(iot.constructTopic("$nodes"), "bell", false);
   
   //define node "bell"
-    client.publish(MQTT::Publish(obj.constructTopic("bell/$name"), "Bell").set_retain(false).set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("bell/$type"), "Bell-01").set_retain(false).set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("bell/$properties"), "button").set_retain(false).set_qos(1));
+    iot.mqtt->publish(iot.constructTopic("bell/$name"), "Bell", false);
+    iot.mqtt->publish(iot.constructTopic("bell/$type"), "Bell-01", false);
+    iot.mqtt->publish(iot.constructTopic("bell/$properties"), "button", false);
 
-    client.publish(MQTT::Publish(obj.constructTopic("bell/button/$name"), "Bell Button").set_retain(false).set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("bell/button/$settable"), "true").set_retain(false).set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("bell/button/$retained"), "false").set_retain(false).set_qos(1));
-    client.publish(MQTT::Publish(obj.constructTopic("bell/button/$datatype"), "boolean").set_retain(false).set_qos(1));  
+    iot.mqtt->publish(iot.constructTopic("bell/button/$name"), "Bell Button", false);
+    iot.mqtt->publish(iot.constructTopic("bell/button/$settable"), "true", false);
+    iot.mqtt->publish(iot.constructTopic("bell/button/$retained"), "false", false);
+    iot.mqtt->publish(iot.constructTopic("bell/button/$datatype"), "boolean", false);  
   }
 }
 
 void initSubscribe() {
-  if (client.connected()) {
-    //default, must exist
-    client.subscribe(MQTT::Subscribe().add_topic(obj.constructTopic("reset"),2));  
-    client.subscribe(MQTT::Subscribe().add_topic(obj.constructTopic("restart"),2));  
-
-    // subscribe listen
-    client.subscribe(MQTT::Subscribe().add_topic(obj.constructTopic("bell/button/set"),2));  
+  if (iot.mqtt->connected()) {
+    iot.mqtt->subscribe(iot.constructTopic("reset"),1);  
+    iot.mqtt->subscribe(iot.constructTopic("restart"),1);  
+    iot.mqtt->subscribe(iot.constructTopic("bell/button/set"),1);  
   }
   publishState("ready");
 }
