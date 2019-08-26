@@ -1,6 +1,18 @@
+/*
+  M1128.cpp - WiFi Connectivity SAM Element IoT Platform.
+  SAM Element
+  https://samelement.com
+*/
+
 #include "M1128.h"
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored  "-Wdeprecated-declarations"
+WiFiClientSecure _wifiClient;
+#pragma GCC diagnostic pop
+
 ESP8266WebServer _wifi_ap_server(80);
+PubSubClient _mqttClient(_wifiClient);
 
 //M1128
 M1128::M1128() { 
@@ -28,28 +40,30 @@ void M1128::wifiConfig(const char* ap_ssid, const char* ap_pass, IPAddress local
   _wifi_ap_subnet = subnet;
 }
 
-void M1128::init(PubSubClient &mqttClient) {
-  init(mqttClient,_mqttCleanSession,_mqttSetWill);
+void M1128::init() {
+  init(NULL);
 }
 
-void M1128::init(PubSubClient &mqttClient, bool cleanSession) {
-  init(mqttClient,cleanSession,_mqttSetWill);
-}
-
-void M1128::init(PubSubClient &mqttClient, bool cleanSession, bool setWill) {
-  init(mqttClient,cleanSession,setWill,NULL);
-}
-
-void M1128::init(PubSubClient &mqttClient, bool cleanSession, bool setWill, Stream *serialDebug) {
+void M1128::init(Stream *serialDebug) {
   SPIFFS.begin();
   pinMode(pinReset, INPUT_PULLUP);  
   if (serialDebug) {
     _serialDebug = serialDebug;
     _serialDebug->flush();
+  } 
+
+  if (prod) {
+    _authHost = AUTH_SERVER_HOST;
+    _mqttHost = MQTT_BROKER_HOST;
+  } else {
+    _authHost = AUTH_SERVER_HOST_SBX;
+    _mqttHost = MQTT_BROKER_HOST_SBX;
   }
-  _mqttClient = &mqttClient;
-  _mqttCleanSession = cleanSession;
-  _mqttSetWill = setWill;
+
+  _mqttClient.setServer(_mqttHost,MQTT_BROKER_PORT);
+  if (onReceive!=NULL) _mqttClient.setCallback(onReceive);
+  mqtt = &_mqttClient;
+  
   if (!_checkResetButton()) _initNetwork(false);
   if (_serialDebug) _serialDebug->println(F("End of initialization, ready for loop.."));
 }
@@ -98,9 +112,9 @@ void M1128::loop() {
 const char* M1128::constructTopic(const char* topic) {
   strcpy(_topic_buf,"");
   strcat(_topic_buf,_dev_id);
-  strcat(_topic_buf,PAYLOAD_DELIMITER);
+  strcat(_topic_buf,MQTT_TOPIC_DELIMITER);
   strcat(_topic_buf,myId());
-  strcat(_topic_buf,PAYLOAD_DELIMITER);
+  strcat(_topic_buf,MQTT_TOPIC_DELIMITER);
   strcat(_topic_buf,topic);
   if (_serialDebug) {
     _serialDebug->print(F("Construct topic: "));
@@ -118,7 +132,7 @@ void M1128::setId(const char* id) {
 }
 
 void M1128::reset() {
-  _mqttClient->publish(MQTT::Publish(constructTopic("$state"), "disconnected").set_retain().set_qos(1));
+  _mqttClient.publish(constructTopic("$state"), "disconnected", true);
   if (_serialDebug) _serialDebug->println(F("Restoring to factory setting.."));
   WiFi.disconnect(true);
   delay(1000);
@@ -127,7 +141,7 @@ void M1128::reset() {
 }
 
 void M1128::restart() {
-  _mqttClient->publish(MQTT::Publish(constructTopic("$state"), "disconnected").set_retain().set_qos(1));
+  _mqttClient.publish(constructTopic("$state"), "disconnected", true);
   if (_serialDebug) _serialDebug->println("Restarting..");
   delay(1000);
   ESP.restart();
@@ -136,14 +150,12 @@ void M1128::restart() {
 void M1128::_initNetwork(bool goAP) {
   _retrieveDeviceId();
   if (_wifiConnect()) {
-    if (wifiClientSecure!=NULL) {
-      if (SPIFFS.exists(MQTT_PATH_CA)) {
-        File ca = SPIFFS.open(MQTT_PATH_CA, "r");
-        if (ca && wifiClientSecure->loadCACert(ca)) { if (_serialDebug) _serialDebug->println(F("CA Certificate loaded..!")); }
-        else if (_serialDebug) _serialDebug->println(F("CA Certificate load failed..!"));          
-        ca.close();
-      }
-    }
+    if (SPIFFS.exists(PATH_CA)) {
+      File ca = SPIFFS.open(PATH_CA, "r");
+      if (ca && _wifiClient.loadCACert(ca)) { if (_serialDebug) _serialDebug->println(F("CA Certificate loaded..!")); }
+      else if (_serialDebug) _serialDebug->println(F("CA Certificate load failed..!"));          
+      ca.close();
+    } else if (_serialDebug) _serialDebug->println(F("CA Certificate is not available."));  
     if (_serialDebug) _serialDebug->println(F("M1128 initialization succeed!"));
     _mqttConnect();    
   } else {
@@ -248,16 +260,60 @@ bool M1128::_wifiSoftAP() {
   return res;
 }
 
+bool M1128::_getAuth() {
+  if (_serialDebug) _serialDebug->println(F("Connect to auth server to get token: "));
+  if (!_wifiClient.connect(_authHost, AUTH_SERVER_PORT)) {
+    if (_serialDebug) _serialDebug->println("Connect failed.");
+    return false;
+  }
+  
+  memset(_tokenRefresh, 0, sizeof(_tokenRefresh));
+  memset(_tokenAccess, 0, sizeof(_tokenAccess));
+  char tmp[strlen(_dev_user)+strlen(_dev_pass)+2];
+  strcpy(tmp,_dev_user);
+  strcat(tmp,":");
+  strcat(tmp,_dev_pass);
+ 
+  if (_serialDebug) _serialDebug->println(F("Connected to auth server. Getting token.."));
+   
+  _wifiClient.setTimeout(AUTH_TIMEOUT);
+  _wifiClient.println(String("GET ") + AUTH_SERVER_PATH + " HTTP/1.1\r\n" +
+    "Host: " + (_authHost) + "\r\n" +
+    "Authorization: Basic " + base64::encode(tmp,false) + "\r\n" +
+    "cache-control: no-cache\r\n" + 
+    "Connection: close\r\n\r\n");
+  
+  _wifiClient.find("\r\n\r\n");
+  char *__token = _tokenAccess;
+  uint16_t __i = 0;
+  while (_wifiClient.connected() || _wifiClient.available()) {
+    ESP.wdtFeed();
+    char c = _wifiClient.read();
+    if (c=='|') {
+      __token[__i] = '\0';
+      __token = _tokenRefresh;
+      __i = 0;
+    } else {
+      __token[__i]=c;
+      __i++;
+    }
+  }
+  if (__i>0) __token[__i-1] = '\0';
+  if (_serialDebug) _serialDebug->println(F("Leaving auth server."));
+  return true;
+}
+
 bool M1128::_mqttConnect() {
   bool res = false;
-  if (!_mqttClient->connected()) {
+  if (!_mqttClient.connected()) {
+    _getAuth();
     if (_serialDebug) _serialDebug->println(F("Connecting to MQTT server"));
-    MQTT::Connect con(myId());
-    con.set_clean_session(_mqttCleanSession);
-    con.set_auth(_dev_user, _dev_pass);
-    con.set_keepalive(MQTT_KEEPALIVE);
-    if (_mqttSetWill) con.set_will(constructTopic(MQTT_WILL_TOPIC), MQTT_WILL_VALUE, MQTT_WILL_QOS, MQTT_WILL_RETAIN);
-    if (_mqttClient->connect(con)) {
+
+    bool res = false;
+    if (setWill) res = _mqttClient.connect(myId(),_tokenAccess, MQTT_PWD, constructTopic(MQTT_WILL_TOPIC), MQTT_WILL_QOS, MQTT_WILL_RETAIN, MQTT_WILL_VALUE, cleanSession);
+    else res = _mqttClient.connect(myId(),_tokenAccess, MQTT_PWD);    
+    
+    if (res) {
       if (_serialDebug) _serialDebug->println(F("Connected to MQTT server"));
       if (_startWiFi) {
         if (onConnect!=NULL) onConnect(); 
@@ -267,8 +323,8 @@ bool M1128::_mqttConnect() {
       if (_serialDebug) _serialDebug->println(F("Could not connect to MQTT server"));   
     }
   }
-  if (_mqttClient->connected()) {
-    _mqttClient->loop();  
+  if (_mqttClient.connected()) {
+    _mqttClient.loop();  
     res = true; 
   }
   return res;
