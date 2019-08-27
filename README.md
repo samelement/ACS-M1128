@@ -8,7 +8,6 @@ SAM Element is an IoT platform. Visit our [website](https://www.samelement.com) 
   - [ESP8266 Documentation](https://arduino-esp8266.readthedocs.io/en/latest/index.html)
   - [Arduino core for ESP8266 WiFi chip](https://github.com/esp8266/Arduino)
   - [Arduino ESP8266 filesystem uploader](https://github.com/esp8266/arduino-esp8266fs-plugin)
-  - [PubSubClient](https://github.com/knolleary/pubsubclient)
 
 ## ESP8266 WiFi Connectivity
   - Support for ESP8266 board.
@@ -22,9 +21,6 @@ SAM Element is an IoT platform. Visit our [website](https://www.samelement.com) 
   - You just need to focus on sensors/actuators, we handle the rest.
 
 # How to Use
-
-### IMPORTANT
-You need to edit MQTT_MAX_PACKET_SIZE in file PubSubClient.h in PubSubClient library. Change the size to at least 1024. Depends on the available memory of your board, you can adjust the value higher to suit to your payload size. Recommeded is 2048. For JWT access token alone it will take space of 956. 
 
 Example connection below is done for ESP8266-01. You may need to made some adjustment for different ESP8266 series.
 ### Define default values
