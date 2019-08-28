@@ -41,7 +41,7 @@ void setup() {
   digitalWrite(DEVICE_PIN_BUTTON_OUTPUT, DEVICE_PIN_BUTTON_DEFSTATE);
   pinMode(3, FUNCTION_3);
   iot.pinReset = 3;
-  iot.prod = false;
+  iot.prod = true;
   iot.cleanSession = true;
   iot.setWill = true;
   iot.apConfigTimeout = 300000;
