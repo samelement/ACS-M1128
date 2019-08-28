@@ -31,7 +31,7 @@ void setup() {
   }
   pinMode(3, FUNCTION_3);
   iot.pinReset = 3;
-  iot.prod = false;
+  iot.prod = true;
   iot.cleanSession = true;
   iot.setWill = false; //don't use lwt
   iot.apConfigTimeout = 300000;
