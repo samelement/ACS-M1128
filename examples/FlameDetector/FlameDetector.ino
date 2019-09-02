@@ -130,10 +130,10 @@ void initPublish() {
     iot.mqtt->publish(iot.constructTopic("sensor/$type"), "Sensor-01", false);
     iot.mqtt->publish(iot.constructTopic("sensor/$properties"), "flame", false);
 
-    iot.mqtt->publish(iot.constructTopic("sensor/lpg/$name"), "FLAME", false);
-    iot.mqtt->publish(iot.constructTopic("sensor/lpg/$settable"), "false", false);
-    iot.mqtt->publish(iot.constructTopic("sensor/lpg/$retained"), "true", false);
-    iot.mqtt->publish(iot.constructTopic("sensor/lpg/$datatype"), "boolean", false);  
+    iot.mqtt->publish(iot.constructTopic("sensor/flame/$name"), "FLAME", false);
+    iot.mqtt->publish(iot.constructTopic("sensor/flame/$settable"), "false", false);
+    iot.mqtt->publish(iot.constructTopic("sensor/flame/$retained"), "true", false);
+    iot.mqtt->publish(iot.constructTopic("sensor/flame/$datatype"), "boolean", false);  
 
   // set device to ready
     iot.mqtt->publish(iot.constructTopic("$state"), "ready", false);  
