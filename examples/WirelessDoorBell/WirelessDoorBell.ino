@@ -77,9 +77,9 @@ void callbackOnReceive(char* topic, byte* payload, unsigned int length) {
     SerialDEBUG->print("With value: ");
     SerialDEBUG->println(strPayload);
   }
-  if (topic==iot.constructTopic("reset") && strPayload=="true") iot.reset();
-  else if (topic==iot.constructTopic("restart") && strPayload=="true") iot.restart();
-  else if (topic==iot.constructTopic("bell/button/set") && strPayload=="true") bellMe();
+  if (strcmp(topic,iot.constructTopic("reset"))==0 && strPayload=="true") iot.reset();
+  else if (strcmp(topic,iot.constructTopic("restart"))==0 && strPayload=="true") iot.restart();
+  else if (strcmp(topic,iot.constructTopic("bell/button/set"))==0 && strPayload=="true") bellMe();
 }
 
 void callbackOnConnect() {
