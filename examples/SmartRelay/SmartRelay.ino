@@ -72,8 +72,10 @@ void callbackOnReceive(char* topic, byte* payload, unsigned int length) {
   }
   if (strcmp(topic,iot.constructTopic("reset"))==0 && strPayload=="true") iot.reset();
   else if (strcmp(topic,iot.constructTopic("restart"))==0 && strPayload=="true") iot.restart();
-  else if (strcmp(topic,iot.constructTopic("relay/onoff/set"))==0 && strPayload=="true") switchMe(!DEVICE_PIN_BUTTON_DEFSTATE);
-  else if (strcmp(topic,iot.constructTopic("relay/onoff/set"))==0 && strPayload=="false") switchMe(DEVICE_PIN_BUTTON_DEFSTATE);
+  else if (strcmp(topic,iot.constructTopic("relay/onoff/set"))==0 && strPayload=="true") switchMe(!DEVICE_PIN_BUTTON_DEFSTATE,true);
+  else if (strcmp(topic,iot.constructTopic("relay/onoff/set"))==0 && strPayload=="false") switchMe(DEVICE_PIN_BUTTON_DEFSTATE,true);
+  else if (strcmp(topic,iot.constructTopic("relay/onoff"))==0 && strPayload=="true") switchMe(!DEVICE_PIN_BUTTON_DEFSTATE,false);
+  else if (strcmp(topic,iot.constructTopic("relay/onoff"))==0 && strPayload=="false") switchMe(DEVICE_PIN_BUTTON_DEFSTATE,false);  
 }
 
 void callbackOnConnect() {
@@ -94,9 +96,9 @@ void callbackOnWiFiConnectTimeout() {
   //ESP.deepSleep(300000000); // sleep for 5 minutes
 }
 
-void switchMe(bool sm) {
+void switchMe(bool sm, bool publish) {
   digitalWrite(DEVICE_PIN_BUTTON_OUTPUT, sm);
-  if (iot.mqtt->connected()) iot.mqtt->publish(iot.constructTopic("relay/onoff"), sm?"false":"true", true);   
+  if (publish && iot.mqtt->connected()) iot.mqtt->publish(iot.constructTopic("relay/onoff"), sm?"false":"true", true);   
 }
 
 void publishState(const char* state) {
@@ -134,6 +136,7 @@ void initSubscribe() {
     // subscribe listen
     iot.mqtt->subscribe(iot.constructTopic("reset"),1);  
     iot.mqtt->subscribe(iot.constructTopic("restart"),1);  
+    iot.mqtt->subscribe(iot.constructTopic("relay/onoff"),1);  
     iot.mqtt->subscribe(iot.constructTopic("relay/onoff/set"),1);  
   }
   publishState("ready");
