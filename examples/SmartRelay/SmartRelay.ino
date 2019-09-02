@@ -36,7 +36,7 @@ void setup() {
   
   iot.pinReset = 3;
   iot.prod = true;
-  iot.cleanSession = true;
+  iot.cleanSession = false;
   iot.setWill = true;
   iot.apConfigTimeout = 300000;
   iot.wifiConnectTimeout = 120000;
@@ -70,10 +70,10 @@ void callbackOnReceive(char* topic, byte* payload, unsigned int length) {
     SerialDEBUG->print("With value: ");
     SerialDEBUG->println(strPayload);
   }
-  if (topic==iot.constructTopic("reset") && strPayload=="true") iot.reset();
-  else if (topic==iot.constructTopic("restart") && strPayload=="true") iot.restart();
-  else if (topic==iot.constructTopic("relay/onoff/set") && strPayload=="true") switchMe(!DEVICE_PIN_BUTTON_DEFSTATE);
-  else if (topic==iot.constructTopic("relay/onoff/set") && strPayload=="false") switchMe(DEVICE_PIN_BUTTON_DEFSTATE);
+  if (strcmp(topic,iot.constructTopic("reset"))==0 && strPayload=="true") iot.reset();
+  else if (strcmp(topic,iot.constructTopic("restart"))==0 && strPayload=="true") iot.restart();
+  else if (strcmp(topic,iot.constructTopic("relay/onoff/set"))==0 && strPayload=="true") switchMe(!DEVICE_PIN_BUTTON_DEFSTATE);
+  else if (strcmp(topic,iot.constructTopic("relay/onoff/set"))==0 && strPayload=="false") switchMe(DEVICE_PIN_BUTTON_DEFSTATE);
 }
 
 void callbackOnConnect() {
