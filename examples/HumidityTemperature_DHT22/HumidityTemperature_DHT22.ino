@@ -112,7 +112,7 @@ void measureSensors() {
     else {
       SerialDEBUG->print("Temperature: ");
       SerialDEBUG->print(event.temperature);
-      SerialDEBUG->println(" °C");
+      SerialDEBUG->println("°C");
       dtostrf(event.temperature, 4, 2, result);
       iot.mqtt->publish(iot.constructTopic("sensor/temp"), result, true);
     }
@@ -142,8 +142,8 @@ void callbackOnReceive(char* topic, byte* payload, unsigned int length) {
     SerialDEBUG->print("With value: ");
     SerialDEBUG->println(strPayload);
   }
-  if (topic==iot.constructTopic("reset") && strPayload=="true") iot.reset();
-  else if (topic==iot.constructTopic("restart") && strPayload=="true") iot.restart();
+  if (strcmp(topic,iot.constructTopic("reset"))==0 && strPayload=="true") iot.reset();
+  else if (strcmp(topic,iot.constructTopic("restart"))==0 && strPayload=="true") iot.restart();
 }
 
 void callbackOnConnect() {
