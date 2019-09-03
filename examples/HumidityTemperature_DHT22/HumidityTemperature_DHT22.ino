@@ -38,7 +38,7 @@ void setup() {
     while (!SerialDEBUG);
     SerialDEBUG->println("Initializing..");
   }
-  pinMode(DHTPIN,INPUT);
+  pinMode(DHTPIN,INPUT_PULLUP);
   pinMode(3, FUNCTION_3);
   iot.pinReset = 3;
   iot.prod = true;
