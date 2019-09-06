@@ -74,6 +74,9 @@ void setup() {
   //set whether you want to use sandbox or production server. default is sandbox (prod=false).
   iot.prod = true;
   
+  //set the expire of access token in seconds. default is 43200 = 12 hours. max is 49 days.
+  iot.accessTokenExp = 43200; // 12 hours
+  
   //set whether mqtt will init in clean session. default  is false.
   iot.cleanSession = true;
   
