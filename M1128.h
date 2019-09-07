@@ -5,6 +5,7 @@
 */
 
 #define USING_AXTLS
+#include <time.h>
 #include <EEPROM.h>
 #include <time.h>
 #include <ESP8266WiFi.h>
@@ -26,6 +27,7 @@ using namespace axTLS;
 #define AUTH_SERVER_PORT 443
 #define AUTH_SERVER_PATH "/auth"
 #define AUTH_TIMEOUT 15000
+#define AUTH_ACCESS_TOKEN_EXP 43200 // 43200s = 12 hours, max 49 days
 
 #define MQTT_BROKER_HOST "iot.samelement.com" //production
 #define MQTT_BROKER_HOST_SBX "iot-sbx.samelement.com" //sandbox
@@ -69,6 +71,8 @@ class M1128 {
     bool prod = false;
     bool cleanSession = false;
     bool setWill = true;
+    uint32_t accessTokenExp = AUTH_ACCESS_TOKEN_EXP;
+
     PubSubClient *mqtt;
     
     callbackFunction onReset;
@@ -81,6 +85,7 @@ class M1128 {
 
     void reset();
     void restart();
+    bool refreshAuth();
     void loop();
     void devConfig(const char* dev_id, const char* dev_user, const char* dev_pass);
     void wifiConfig(const char* ap_ssid, const char* ap_pass);
@@ -95,8 +100,8 @@ class M1128 {
     IPAddress _wifi_ap_subnet;
    
     char _tokenRefresh[1000];
-    char _tokenAccess[1000]; 
-
+    char _tokenAccess[1000];
+    
     const char *_authHost;
     const char *_mqttHost;
     const char* _dev_id;
@@ -109,19 +114,20 @@ class M1128 {
     uint32_t _softAPCurrentMillis = 0;
     uint32_t _wifiFailStartMillis = 0;
     uint32_t _wifiFailCurrentMillis = 0;
+    uint32_t _timeStartMillis = 0;
+    uint32_t _timeCurrentMillis = 0;
         
     uint8_t _pinResetButtonLast = HIGH;
     char _topic_buf[MQTT_PAYLOAD_SIZE];
     char _myAddr[33];
     char _custAddr[33];
     bool _startWiFi = false;
-
+  
     void _initNetwork(bool goAP);
     bool _checkResetButton();
     bool _wifiConnect();
     bool _wifiConnect(const char* ssid, const char* password);
     bool _wifiSoftAP();
-    bool _getAuth();
     bool _mqttConnect();
     void _retrieveDeviceId();
     String _getContentType(String filename);

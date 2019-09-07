@@ -51,7 +51,7 @@ void M1128::init(Stream *serialDebug) {
     _serialDebug = serialDebug;
     _serialDebug->flush();
   } 
-
+ 
   if (prod) {
     _authHost = AUTH_SERVER_HOST;
     _mqttHost = MQTT_BROKER_HOST;
@@ -147,6 +147,49 @@ void M1128::restart() {
   ESP.restart();
 }
 
+bool M1128::refreshAuth() {
+  if (_serialDebug) _serialDebug->println(F("Connect to auth server to get token: "));
+  if (!_wifiClient.connect(_authHost, AUTH_SERVER_PORT)) {
+    if (_serialDebug) _serialDebug->println("Connect failed.");
+    return false;
+  }
+  memset(_tokenAccess, 0, sizeof(_tokenAccess));
+  char tmp[strlen(_dev_user)+strlen(_dev_pass)+2];
+  strcpy(tmp,_dev_user);
+  strcat(tmp,":");
+  strcat(tmp,_dev_pass);
+ 
+  if (_serialDebug) _serialDebug->println(F("Connected to auth server. Getting token.."));
+   
+  _wifiClient.setTimeout(AUTH_TIMEOUT);
+  _wifiClient.println(String("GET ") + AUTH_SERVER_PATH + " HTTP/1.1\r\n" +
+    "Host: " + (_authHost) + "\r\n" +
+    "Authorization: Basic " + base64::encode(tmp,false) + "\r\n" +
+    "cache-control: no-cache\r\n" + 
+    "Connection: close\r\n\r\n");
+  
+  _wifiClient.find("\r\n\r\n");
+  char *__token = _tokenAccess;
+  uint16_t __i = 0;
+  while (_wifiClient.connected() || _wifiClient.available()) {
+    ESP.wdtFeed();
+    char c = _wifiClient.read();
+    if (c=='|') {
+      __token[__i] = '\0';
+      __token = _tokenRefresh;
+      __i = 0;
+    } else {
+      __token[__i]=c;
+      __i++;
+    }
+  }
+  if (__i>0) __token[__i-1] = '\0';
+
+  if (strlen(_tokenAccess)>0 && strlen(_tokenRefresh)>0) _timeStartMillis = millis();
+  if (_serialDebug) _serialDebug->println(F("Leaving auth server."));
+  return true;
+}
+
 void M1128::_initNetwork(bool goAP) {
   _retrieveDeviceId();
   if (_wifiConnect()) {
@@ -157,6 +200,7 @@ void M1128::_initNetwork(bool goAP) {
       ca.close();
     } else if (_serialDebug) _serialDebug->println(F("CA Certificate is not available."));  
     if (_serialDebug) _serialDebug->println(F("M1128 initialization succeed!"));
+    refreshAuth();
     _mqttConnect();    
   } else {
     if (_wifiConnectRetryVal < wifiConnectRetry-1) {
@@ -260,53 +304,13 @@ bool M1128::_wifiSoftAP() {
   return res;
 }
 
-bool M1128::_getAuth() {
-  if (_serialDebug) _serialDebug->println(F("Connect to auth server to get token: "));
-  if (!_wifiClient.connect(_authHost, AUTH_SERVER_PORT)) {
-    if (_serialDebug) _serialDebug->println("Connect failed.");
-    return false;
-  }
-  
-  memset(_tokenRefresh, 0, sizeof(_tokenRefresh));
-  memset(_tokenAccess, 0, sizeof(_tokenAccess));
-  char tmp[strlen(_dev_user)+strlen(_dev_pass)+2];
-  strcpy(tmp,_dev_user);
-  strcat(tmp,":");
-  strcat(tmp,_dev_pass);
- 
-  if (_serialDebug) _serialDebug->println(F("Connected to auth server. Getting token.."));
-   
-  _wifiClient.setTimeout(AUTH_TIMEOUT);
-  _wifiClient.println(String("GET ") + AUTH_SERVER_PATH + " HTTP/1.1\r\n" +
-    "Host: " + (_authHost) + "\r\n" +
-    "Authorization: Basic " + base64::encode(tmp,false) + "\r\n" +
-    "cache-control: no-cache\r\n" + 
-    "Connection: close\r\n\r\n");
-  
-  _wifiClient.find("\r\n\r\n");
-  char *__token = _tokenAccess;
-  uint16_t __i = 0;
-  while (_wifiClient.connected() || _wifiClient.available()) {
-    ESP.wdtFeed();
-    char c = _wifiClient.read();
-    if (c=='|') {
-      __token[__i] = '\0';
-      __token = _tokenRefresh;
-      __i = 0;
-    } else {
-      __token[__i]=c;
-      __i++;
-    }
-  }
-  if (__i>0) __token[__i-1] = '\0';
-  if (_serialDebug) _serialDebug->println(F("Leaving auth server."));
-  return true;
-}
-
 bool M1128::_mqttConnect() {
   bool res = false;
+  _timeCurrentMillis = millis();
+  int64_t tframe = _timeCurrentMillis - _timeStartMillis;
+  if (tframe > accessTokenExp*1000 || tframe < 0) refreshAuth();
+
   if (!_mqttClient.connected()) {
-    _getAuth();
     if (_serialDebug) _serialDebug->println(F("Connecting to MQTT server"));
 
     bool res = false;
@@ -322,9 +326,8 @@ bool M1128::_mqttConnect() {
     } else {
       if (_serialDebug) _serialDebug->println(F("Could not connect to MQTT server"));   
     }
-  }
-  if (_mqttClient.connected()) {
-    _mqttClient.loop();  
+  } else  {
+    _mqttClient.loop();    
     res = true; 
   }
   return res;
