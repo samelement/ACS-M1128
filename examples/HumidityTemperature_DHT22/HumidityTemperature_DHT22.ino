@@ -60,14 +60,16 @@ void setup() {
   ESP.wdtEnable(8000);      
   initSensors();
   iot.init(DEBUG?SerialDEBUG:NULL);
-  delay(10);  
+  delay(10);
 }
 
 void loop() {
   ESP.wdtFeed();
-  measureSensors();
   iot.loop();
-  sendData();
+  if (iot.isReady) {
+    measureSensors();
+    sendData();
+  }
 }
 
 void initSensors() {
@@ -130,7 +132,7 @@ void measureSensors() {
 void sendData() {
   sensorCurMillis = millis();
   int32_t tframe = sensorCurMillis - sensorPrevMillis;
-  if (tframe > SEND_INTERVAL || tframe == 0) {
+  if (tframe > SEND_INTERVAL || tframe == 0 || sensorPrevMillis==0) {
     sensorPrevMillis = sensorCurMillis;
     if (iot.mqtt->connected()) {
       iot.mqtt->publish(iot.constructTopic("sensor/temp"), resultT, true);
