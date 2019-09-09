@@ -6,7 +6,6 @@
  *  3. This example use Adafruit unified sensor library for DHT22 reading, hence you must install it first.
  *  
  */
-
 #include "M1128.h"
 #include <Adafruit_Sensor.h>
 #include <DHT.h>
@@ -25,18 +24,21 @@
 HardwareSerial *SerialDEBUG = &Serial;
 M1128 iot;
 
+#define SEND_INTERVAL     10000     // send data to mqtt broker interval
 #define DHTPIN            0         // Pin which is connected to the DHT sensor.
 #define DHTTYPE           DHT22     // DHT 22 (AM2302)
 DHT_Unified dht(DHTPIN, DHTTYPE);
 unsigned int sensorDelayMS = 0;
 unsigned int sensorCurMillis = 0;
 unsigned int sensorPrevMillis = 0;
+char resultT[7]; // Buffer big enough for 6-character float
+char resultH[7]; // Buffer big enough for 6-character float  
 
 void setup() {
   if (DEBUG) {
     SerialDEBUG->begin(DEBUG_BAUD, SERIAL_8N1, SERIAL_TX_ONLY);
     while (!SerialDEBUG);
-    SerialDEBUG->println("Initializing..");
+    SerialDEBUG->println(F("Initializing.."));
   }
   pinMode(DHTPIN,INPUT_PULLUP);
   pinMode(3, FUNCTION_3);
@@ -63,70 +65,76 @@ void setup() {
 
 void loop() {
   ESP.wdtFeed();
+  measureSensors();
   iot.loop();
-  if (iot.isReady) measureSensors();
+  sendData();
 }
 
 void initSensors() {
-  SerialDEBUG->println("DHTxx Unified Sensor Example");
   // Print temperature sensor details.
+  dht.begin();
   sensor_t sensor;
   dht.temperature().getSensor(&sensor);
-  SerialDEBUG->println("------------------------------------");
-  SerialDEBUG->println("Temperature");
-  SerialDEBUG->print  ("Sensor:       "); SerialDEBUG->println(sensor.name);
-  SerialDEBUG->print  ("Driver Ver:   "); SerialDEBUG->println(sensor.version);
-  SerialDEBUG->print  ("Unique ID:    "); SerialDEBUG->println(sensor.sensor_id);
-  SerialDEBUG->print  ("Max Value:    "); SerialDEBUG->print(sensor.max_value); SerialDEBUG->println(" *C");
-  SerialDEBUG->print  ("Min Value:    "); SerialDEBUG->print(sensor.min_value); SerialDEBUG->println(" *C");
-  SerialDEBUG->print  ("Resolution:   "); SerialDEBUG->print(sensor.resolution); SerialDEBUG->println(" *C");  
-  SerialDEBUG->println("------------------------------------");
+  SerialDEBUG->println(F("------------------------------------"));
+  SerialDEBUG->println(F("Temperature"));
+  SerialDEBUG->print  (F("Sensor:       ")); SerialDEBUG->println(sensor.name);
+  SerialDEBUG->print  (F("Driver Ver:   ")); SerialDEBUG->println(sensor.version);
+  SerialDEBUG->print  (F("Unique ID:    ")); SerialDEBUG->println(sensor.sensor_id);
+  SerialDEBUG->print  (F("Max Value:    ")); SerialDEBUG->print(sensor.max_value); SerialDEBUG->println(F("°C"));
+  SerialDEBUG->print  (F("Min Value:    ")); SerialDEBUG->print(sensor.min_value); SerialDEBUG->println(F("°C"));
+  SerialDEBUG->print  (F("Resolution:   ")); SerialDEBUG->print(sensor.resolution); SerialDEBUG->println(F("°C"));  
+  SerialDEBUG->println(F("------------------------------------"));
   // Print humidity sensor details.
   dht.humidity().getSensor(&sensor);
-  SerialDEBUG->println("------------------------------------");
-  SerialDEBUG->println("Humidity");
-  SerialDEBUG->print  ("Sensor:       "); SerialDEBUG->println(sensor.name);
-  SerialDEBUG->print  ("Driver Ver:   "); SerialDEBUG->println(sensor.version);
-  SerialDEBUG->print  ("Unique ID:    "); SerialDEBUG->println(sensor.sensor_id);
-  SerialDEBUG->print  ("Max Value:    "); SerialDEBUG->print(sensor.max_value); SerialDEBUG->println("%");
-  SerialDEBUG->print  ("Min Value:    "); SerialDEBUG->print(sensor.min_value); SerialDEBUG->println("%");
-  SerialDEBUG->print  ("Resolution:   "); SerialDEBUG->print(sensor.resolution); SerialDEBUG->println("%");  
-  SerialDEBUG->println("------------------------------------");
+  SerialDEBUG->println(F("------------------------------------"));
+  SerialDEBUG->println(F("Humidity"));
+  SerialDEBUG->print  (F("Sensor:       ")); SerialDEBUG->println(sensor.name);
+  SerialDEBUG->print  (F("Driver Ver:   ")); SerialDEBUG->println(sensor.version);
+  SerialDEBUG->print  (F("Unique ID:    ")); SerialDEBUG->println(sensor.sensor_id);
+  SerialDEBUG->print  (F("Max Value:    ")); SerialDEBUG->print(sensor.max_value); SerialDEBUG->println(F("%"));
+  SerialDEBUG->print  (F("Min Value:    ")); SerialDEBUG->print(sensor.min_value); SerialDEBUG->println(F("%"));
+  SerialDEBUG->print  (F("Resolution:   ")); SerialDEBUG->print(sensor.resolution); SerialDEBUG->println(F("%"));  
+  SerialDEBUG->println(F("------------------------------------"));
   // Set delay between sensor readings based on sensor details.
-  //sensorDelayMS = sensor.min_delay / 1000;
-  sensorDelayMS = 60000;
+  sensorDelayMS = sensor.min_delay / 1000;
+  //sensorDelayMS = 10000;
 }
 
 void measureSensors() {
-  // Delay between measurements.
+  delay(sensorDelayMS);
+  sensors_event_t event;
+  // Get temperature event and print its value.
+  dht.temperature().getEvent(&event);
+  if (isnan(event.temperature)) {
+    SerialDEBUG->println(F("Error reading temperature!"));
+  }
+  else {
+    dtostrf(event.temperature, 4, 2, resultT);
+    SerialDEBUG->print(F("Temperature: "));
+    SerialDEBUG->print(resultT);
+    SerialDEBUG->println(F("°C"));
+  }
+  // Get humidity event and print its value.
+  dht.humidity().getEvent(&event);
+  if (isnan(event.relative_humidity)) {
+    SerialDEBUG->println(F("Error reading humidity!"));
+  }
+  else {
+    dtostrf(event.relative_humidity, 4, 2, resultH);
+    SerialDEBUG->print(F("Humidity: "));
+    SerialDEBUG->print(resultH);
+    SerialDEBUG->println(F("%"));
+  }
+}
+
+void sendData() {
   sensorCurMillis = millis();
-  if ((sensorCurMillis - sensorPrevMillis > sensorDelayMS) || (sensorCurMillis - sensorPrevMillis < 0)) {
+  int32_t tframe = sensorCurMillis - sensorPrevMillis;
+  if (tframe > SEND_INTERVAL || tframe == 0) {
     sensorPrevMillis = sensorCurMillis;
-    char result[6]; // Buffer big enough for 6-character float
-    // Get temperature event and print its value.
-    sensors_event_t event;  
-    dht.temperature().getEvent(&event);
-    if (isnan(event.temperature)) {
-      SerialDEBUG->println("Error reading temperature!");
-    }
-    else {
-      SerialDEBUG->print("Temperature: ");
-      SerialDEBUG->print(event.temperature);
-      SerialDEBUG->println("°C");
-      dtostrf(event.temperature, 4, 2, result);
-      iot.mqtt->publish(iot.constructTopic("sensor/temp"), result, true);
-    }
-    // Get humidity event and print its value.
-    dht.humidity().getEvent(&event);
-    if (isnan(event.relative_humidity)) {
-      SerialDEBUG->println("Error reading humidity!");
-    }
-    else {
-      SerialDEBUG->print("Humidity: ");
-      SerialDEBUG->print(event.relative_humidity);
-      SerialDEBUG->println("%");
-      dtostrf(event.relative_humidity, 4, 2, result);
-      iot.mqtt->publish(iot.constructTopic("sensor/humid"), result, true);
+    if (iot.mqtt->connected()) {
+      iot.mqtt->publish(iot.constructTopic("sensor/temp"), resultT, true);
+      iot.mqtt->publish(iot.constructTopic("sensor/humid"), resultH, true);
     }
   }
 }
@@ -139,7 +147,7 @@ void callbackOnReceive(char* topic, byte* payload, unsigned int length) {
   if (DEBUG) {
     SerialDEBUG->print(F("Receiving topic: "));
     SerialDEBUG->println(topic);
-    SerialDEBUG->print("With value: ");
+    SerialDEBUG->print(F("With value: "));
     SerialDEBUG->println(strPayload);
   }
   if (strcmp(topic,iot.constructTopic("reset"))==0 && strPayload=="true") iot.reset();
