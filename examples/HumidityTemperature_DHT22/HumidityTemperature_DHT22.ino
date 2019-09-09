@@ -24,7 +24,7 @@
 HardwareSerial *SerialDEBUG = &Serial;
 M1128 iot;
 
-#define SEND_INTERVAL     10000     // send data to mqtt broker interval
+#define SEND_INTERVAL     60000     // send data to mqtt broker interval
 #define DHTPIN            0         // Pin which is connected to the DHT sensor.
 #define DHTTYPE           DHT22     // DHT 22 (AM2302)
 DHT_Unified dht(DHTPIN, DHTTYPE);
