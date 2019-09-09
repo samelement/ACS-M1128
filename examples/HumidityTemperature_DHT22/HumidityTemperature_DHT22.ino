@@ -96,8 +96,8 @@ void initSensors() {
   SerialDEBUG->print  (F("Resolution:   ")); SerialDEBUG->print(sensor.resolution); SerialDEBUG->println(F("%"));  
   SerialDEBUG->println(F("------------------------------------"));
   // Set delay between sensor readings based on sensor details.
-  //sensorDelayMS = sensor.min_delay / 1000;
-  sensorDelayMS = 60000;
+  sensorDelayMS = sensor.min_delay / 1000;
+  //sensorDelayMS = 60000;
 }
 
 void measureSensors() {
