@@ -75,6 +75,7 @@ void loop() {
 void initSensors() {
   // Print temperature sensor details.
   dht.begin();
+  sensorPrevMillis = 0;
   sensor_t sensor;
   dht.temperature().getSensor(&sensor);
   SerialDEBUG->println(F("------------------------------------"));
