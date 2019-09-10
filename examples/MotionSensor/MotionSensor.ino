@@ -17,6 +17,8 @@
 #define DEVELOPER_USER "dmI0OkvoFRLRzHu3J3tEWQbIXQwDeF9q"
 #define DEVELOPER_PASS "dyUiAb1cjkS8FRrokTXxtY1s4DUmOJsa"
 
+#define DEVICE_PIN_RESET 3
+
 #define WIFI_DEFAULT_SSID "SmartMotion"
 #define WIFI_DEFAULT_PASS "abcd1234"
 
@@ -25,12 +27,13 @@ M1128 iot;
 
 void setup() {
   if (DEBUG) {
-    SerialDEBUG->begin(DEBUG_BAUD, SERIAL_8N1, SERIAL_TX_ONLY);
+    //SerialDEBUG->begin(DEBUG_BAUD, SERIAL_8N1, SERIAL_TX_ONLY); // for ESP8266
+    SerialDEBUG->begin(DEBUG_BAUD, SERIAL_8N1); // for ESP32
     while (!SerialDEBUG);
     SerialDEBUG->println("Initializing..");
   }
-  pinMode(3, FUNCTION_3);
-  iot.pinReset = 3;
+  pinMode(DEVICE_PIN_RESET, FUNCTION_3);
+  iot.pinReset = DEVICE_PIN_RESET;
   iot.prod = true;
   iot.cleanSession = true;
   iot.setWill = false; //don't use lwt
@@ -42,14 +45,12 @@ void setup() {
   iot.onConnect = callbackOnConnect;
   iot.onAPConfigTimeout = callbackOnAPConfigTimeout;
   iot.onWiFiConnectTimeout = callbackOnWiFiConnectTimeout;  
-  ESP.wdtEnable(8000);  
   iot.init(DEBUG?SerialDEBUG:NULL);
   delay(10);
 }
 
 void loop() {
   yield();
-  ESP.wdtFeed();
   if (!iot.isReady) iot.loop();
 }
 
