@@ -7,10 +7,12 @@ SAM Element is an IoT platform. Visit our [website](https://www.samelement.com) 
   - [Knowledgebase](https://ask.samelement.com)
   - [ESP8266 Documentation](https://arduino-esp8266.readthedocs.io/en/latest/index.html)
   - [Arduino core for ESP8266 WiFi chip](https://github.com/esp8266/Arduino)
+  - [Arduino core for ESP32 WiFi chip](https://github.com/espressif/arduino-esp32)
   - [Arduino ESP8266 filesystem uploader](https://github.com/esp8266/arduino-esp8266fs-plugin)
+  - [Arduino ESP32 filesystem uploader](https://github.com/me-no-dev/arduino-esp32fs-plugin)
 
-## ESP8266 WiFi Connectivity
-  - Support for ESP8266 board.
+## WiFi Connectivity
+  - Supported board: ESP32, ESP8266.
   - Easy connect to SAM Element IoT platform.
   - Ready to use some working examples for real application.
   - WiFi configuration page ready.
@@ -19,7 +21,6 @@ SAM Element is an IoT platform. Visit our [website](https://www.samelement.com) 
   - Custom serial number.
   - Secure connection.
   - You just need to focus on sensors/actuators, we handle the rest.
-  - Next release will support ESP32.
 
 # How to Use
 
