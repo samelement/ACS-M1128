@@ -6,12 +6,18 @@
 
 #include "M1128.h"
 
+
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored  "-Wdeprecated-declarations"
 WiFiClientSecure _wifiClient;
 #pragma GCC diagnostic pop
 
+#if defined(ESP8266)
 ESP8266WebServer _wifi_ap_server(80);
+#elif defined(ESP32)
+WebServer _wifi_ap_server(80);
+#endif
+
 PubSubClient _mqttClient(_wifiClient);
 
 //M1128
@@ -134,6 +140,12 @@ void M1128::setId(const char* id) {
 void M1128::reset() {
   _mqttClient.publish(constructTopic("$state"), "disconnected", true);
   if (_serialDebug) _serialDebug->println(F("Restoring to factory setting.."));
+  #if defined(ESP32)
+    // some ESP32 didn't erased after disconnect(true), this will fix it.
+    //esp_wifi_restore();
+    WiFi.disconnect(true);
+    WiFi.begin("0","0");    
+  #endif
   WiFi.disconnect(true);
   delay(1000);
   _initNetwork(true);
@@ -149,41 +161,69 @@ void M1128::restart() {
 
 bool M1128::refreshAuth() {
   if (_serialDebug) _serialDebug->println(F("Connect to auth server to get token: "));
-  if (!_wifiClient.connect(_authHost, AUTH_SERVER_PORT)) {
-    if (_serialDebug) _serialDebug->println("Connect failed.");
-    return false;
-  }
-  memset(_tokenAccess, 0, sizeof(_tokenAccess));
-  char tmp[strlen(_dev_user)+strlen(_dev_pass)+2];
-  strcpy(tmp,_dev_user);
-  strcat(tmp,":");
-  strcat(tmp,_dev_pass);
- 
-  if (_serialDebug) _serialDebug->println(F("Connected to auth server. Getting token.."));
-   
-  _wifiClient.setTimeout(AUTH_TIMEOUT);
-  _wifiClient.println(String("GET ") + AUTH_SERVER_PATH + " HTTP/1.1\r\n" +
-    "Host: " + (_authHost) + "\r\n" +
-    "Authorization: Basic " + base64::encode(tmp,false) + "\r\n" +
-    "cache-control: no-cache\r\n" + 
-    "Connection: close\r\n\r\n");
   
-  _wifiClient.find("\r\n\r\n");
-  char *__token = _tokenAccess;
-  uint16_t __i = 0;
-  while (_wifiClient.connected() || _wifiClient.available()) {
-    ESP.wdtFeed();
-    char c = _wifiClient.read();
-    if (c=='|') {
-      __token[__i] = '\0';
-      __token = _tokenRefresh;
-      __i = 0;
-    } else {
-      __token[__i]=c;
-      __i++;
+  #if defined(ESP8266)
+  
+    if (!_wifiClient.connect(_authHost, AUTH_SERVER_PORT)) {
+      if (_serialDebug) _serialDebug->println("Connect failed.");
+      return false;
     }
-  }
-  if (__i>0) __token[__i-1] = '\0';
+    memset(_tokenAccess, 0, sizeof(_tokenAccess));
+    memset(_tokenRefresh, 0, sizeof(_tokenRefresh));
+    char tmp[strlen(_dev_user)+strlen(_dev_pass)+2];
+    strcpy(tmp,_dev_user);
+    strcat(tmp,":");
+    strcat(tmp,_dev_pass);
+   
+    if (_serialDebug) _serialDebug->println(F("Connected to auth server. Getting token.."));
+  
+    _wifiClient.setTimeout(AUTH_TIMEOUT);
+    _wifiClient.println(String("GET ") + AUTH_SERVER_PATH + " HTTP/1.1\r\n" +
+      "Host: " + (_authHost) + "\r\n" +
+      "Authorization: Basic " + base64::encode(tmp,false) + "\r\n" +
+      "cache-control: no-cache\r\n" + 
+      "Connection: close\r\n\r\n");
+    
+    _wifiClient.find("\r\n\r\n");
+    char *__token = _tokenAccess;
+    uint16_t __i = 0;
+    while (_wifiClient.connected() || _wifiClient.available()) {
+      ESP.wdtFeed();
+      char c = _wifiClient.read();
+      if (c=='|') {
+        __token[__i] = '\0';
+        __token = _tokenRefresh;
+        __i = 0;
+      } else {
+        __token[__i]=c;
+        __i++;
+      }
+    }
+    if (__i>0) __token[__i-1] = '\0';
+
+  #elif defined(ESP32)
+  
+    memset(_tokenAccess, 0, sizeof(_tokenAccess));
+    memset(_tokenRefresh, 0, sizeof(_tokenRefresh));
+    HTTPClient https;
+    if (https.begin(_wifiClient, "https://" + String(_authHost) + AUTH_SERVER_PATH)) {
+      
+      if (_serialDebug) _serialDebug->println(F("Connected to auth server. Getting token.."));
+      
+      https.setAuthorization(_dev_user,_dev_pass);
+      int httpCode = https.GET();    
+      // httpCode will be negative on error
+      if (httpCode == HTTP_CODE_OK || httpCode == HTTP_CODE_MOVED_PERMANENTLY) {
+          String payload = https.getString();
+          uint16_t __i = payload.indexOf('|');
+          strcpy(_tokenAccess,payload.substring(0,__i-1).c_str());
+          strcpy(_tokenRefresh,payload.substring(__i+1,payload.length()-1).c_str());
+      } else if (_serialDebug) _serialDebug->printf("Connect failed with error: %s\n", https.errorToString(httpCode).c_str());
+    
+      https.end();
+    } else if (_serialDebug) _serialDebug->println("Connect failed.");
+  
+  #endif  
 
   if (strlen(_tokenAccess)>0 && strlen(_tokenRefresh)>0) _timeStartMillis = millis();
   if (_serialDebug) _serialDebug->println(F("Leaving auth server."));
@@ -195,8 +235,13 @@ void M1128::_initNetwork(bool goAP) {
   if (_wifiConnect()) {
     if (SPIFFS.exists(PATH_CA)) {
       File ca = SPIFFS.open(PATH_CA, "r");
-      if (ca && _wifiClient.loadCACert(ca)) { if (_serialDebug) _serialDebug->println(F("CA Certificate loaded..!")); }
-      else if (_serialDebug) _serialDebug->println(F("CA Certificate load failed..!"));          
+      #if defined(ESP8266)
+        if (ca && _wifiClient.loadCACert(ca)) { if (_serialDebug) _serialDebug->println(F("CA Certificate loaded..!")); }
+        else if (_serialDebug) _serialDebug->println(F("CA Certificate load failed..!"));
+      #elif defined(ESP32)
+        if (ca && _wifiClient.loadCACert(ca, ca.size())) { if (_serialDebug) _serialDebug->println(F("CA Certificate loaded..!")); }
+        else if (_serialDebug) _serialDebug->println(F("CA Certificate load failed..!"));
+      #endif
       ca.close();
     } else if (_serialDebug) _serialDebug->println(F("CA Certificate is not available."));  
     if (_serialDebug) _serialDebug->println(F("M1128 initialization succeed!"));
@@ -308,8 +353,8 @@ bool M1128::_mqttConnect() {
   bool res = false;
   _timeCurrentMillis = millis();
   int64_t tframe = _timeCurrentMillis - _timeStartMillis;
-  if (tframe > accessTokenExp*1000 || tframe < 0) refreshAuth();
-
+  if (tframe > accessTokenExp*1000 || tframe < 0 || _timeStartMillis==0) refreshAuth();
+  
   if (!_mqttClient.connected()) {
     if (_serialDebug) _serialDebug->println(F("Connecting to MQTT server"));
 
@@ -334,7 +379,12 @@ bool M1128::_mqttConnect() {
 }
 
 void M1128::_retrieveDeviceId() {
-  String addr = String(ESP.getChipId());
+  String addr = "";
+  #if defined(ESP8266)
+    addr = String(ESP.getChipId());
+  #elif defined(ESP32)
+    addr = String((uint32_t)(ESP.getEfuseMac() >> 32));
+  #endif
   addr.toCharArray(_myAddr,32);
   _myAddr[32]='\0';
 }
@@ -367,7 +417,10 @@ void M1128::_handleWifiConfig() {
     _wifi_ap_server.send(200);
     WiFi.softAPdisconnect(true);
     _softAPStartMillis = 0;
-    if (_wifiConnect(_wifi_ap_server.arg("ssid").c_str(),_wifi_ap_server.arg("password").c_str())) _mqttConnect();
+    if (_wifiConnect(_wifi_ap_server.arg("ssid").c_str(),_wifi_ap_server.arg("password").c_str())) {
+      _timeStartMillis = 0;
+      _mqttConnect();
+    }
     if (onWiFiConfigChanged!=NULL) onWiFiConfigChanged();
   } else _handleFileRead(_wifi_ap_server.uri());
 }
@@ -383,6 +436,8 @@ bool M1128::_handleFileRead(String path) { // send the right file to the client 
   String contentType = _getContentType(path);            // Get the MIME type
   if (SPIFFS.exists(path)) {                            // If the file exists
     File file = SPIFFS.open(path, "r");                 // Open it
+    _wifi_ap_server.sendHeader("Content-Length", (String)(file.size()));
+    _wifi_ap_server.sendHeader("Cache-Control", "max-age=2628000, public"); // cache for 30 days
     _wifi_ap_server.streamFile(file, contentType); // And send it to the client
     file.close();                                       // Then close the file again
     return true;

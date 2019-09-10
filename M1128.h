@@ -8,15 +8,31 @@
 #include <time.h>
 #include <EEPROM.h>
 #include <time.h>
-#include <ESP8266WiFi.h>
-#include <ESP8266WebServer.h>
-#include <base64.h>
 #include "PubSubClient.h"
 #include "FS.h"
 
+#if defined(ESP8266)
+
+#include <base64.h>
+#include <ESP8266WiFi.h>
+#include <ESP8266WebServer.h>
 // force use of AxTLS (BearSSL is now default)
 #include <WiFiClientSecureAxTLS.h>
 using namespace axTLS;
+
+#elif defined(ESP32)
+
+#include <esp_wifi.h>
+#include <WiFi.h>
+#include <WiFiClient.h>
+#include <WebServer.h>
+#include <ESPmDNS.h>
+#include <WiFiClientSecure.h>
+#include <HTTPClient.h>
+#include "SPIFFS.h"
+
+#endif
+
 
 #ifndef M1128_h
 #define M1128_h
