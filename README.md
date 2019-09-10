@@ -24,7 +24,7 @@ SAM Element is an IoT platform. Visit our [website](https://www.samelement.com) 
 
 # How to Use
 
-Example connection below is done for ESP8266-01. You may need to made some adjustment for different ESP8266 series.
+Example connection below is done for ESP8266-01. You may need to made some adjustment for different board.
 ### Define default values
 ```sh
 // get your account details in your dashboard
