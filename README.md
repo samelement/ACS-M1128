@@ -19,6 +19,7 @@ SAM Element is an IoT platform. Visit our [website](https://www.samelement.com) 
   - Custom serial number.
   - Secure connection.
   - You just need to focus on sensors/actuators, we handle the rest.
+  - Next release will support ESP32.
 
 # How to Use
 
