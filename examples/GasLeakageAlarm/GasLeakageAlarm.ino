@@ -17,6 +17,8 @@
 #define WIFI_DEFAULT_SSID "GasAlarm"
 #define WIFI_DEFAULT_PASS "abcd1234"
 
+#define DEVICE_PIN_RESET 3
+
 #define DEVICE_PIN_DEFSTATE HIGH //initial/default pin state
 #define DEVICE_PIN_INPUT 0 //GPIO pin input
 #define DEVICE_PIN_OUTPUT 2 // pin GPIO2 for output
@@ -29,15 +31,16 @@ bool pinCurrentState = DEVICE_PIN_DEFSTATE;
 
 void setup() {
   if (DEBUG) {
-    SerialDEBUG->begin(DEBUG_BAUD, SERIAL_8N1, SERIAL_TX_ONLY);
+    //SerialDEBUG->begin(DEBUG_BAUD, SERIAL_8N1, SERIAL_TX_ONLY); // for ESP8266
+    SerialDEBUG->begin(DEBUG_BAUD, SERIAL_8N1); // for ESP32
     while (!SerialDEBUG);
     SerialDEBUG->println("Initializing..");
   }
   pinMode(DEVICE_PIN_INPUT,INPUT);
   pinMode(DEVICE_PIN_OUTPUT,OUTPUT);
   digitalWrite(DEVICE_PIN_OUTPUT, DEVICE_PIN_DEFSTATE);
-  pinMode(3, FUNCTION_3);
-  iot.pinReset = 3;
+  pinMode(DEVICE_PIN_RESET, FUNCTION_3);
+  iot.pinReset = DEVICE_PIN_RESET;
   iot.prod = true;
   iot.cleanSession = true;
   iot.setWill = true;
@@ -52,13 +55,11 @@ void setup() {
   iot.onAPConfigTimeout = callbackOnAPConfigTimeout;
   iot.onWiFiConnectTimeout = callbackOnWiFiConnectTimeout;  
   
-  ESP.wdtEnable(8000);      
   iot.init(DEBUG?SerialDEBUG:NULL);
   delay(10);
 }
 
 void loop() {
-  ESP.wdtFeed();
   iot.loop();
   checkSensor();
 }
