@@ -1,5 +1,5 @@
 /* 
- *  DHT22 sensor example with ESP8266-01:
+ *  DHT22 sensor example with ESP32:
  *  
  *  1. Publish message every sensorDelayMS to "/sensor/temp" and "/sensor/humid" for temperature and humidity.
  *  2. Connect DHT22 data out to GPIO0.
@@ -21,12 +21,14 @@
 #define WIFI_DEFAULT_SSID "SmartDHT22"
 #define WIFI_DEFAULT_PASS "abcd1234"
 
-HardwareSerial *SerialDEBUG = &Serial;
-M1128 iot;
-
+#define DEVICE_PIN_RESET 3
 #define SEND_INTERVAL     60000     // send data to mqtt broker interval
 #define DHTPIN            0         // Pin which is connected to the DHT sensor.
 #define DHTTYPE           DHT22     // DHT 22 (AM2302)
+
+HardwareSerial *SerialDEBUG = &Serial;
+M1128 iot;
+
 DHT_Unified dht(DHTPIN, DHTTYPE);
 unsigned int sensorDelayMS = 0;
 unsigned int sensorCurMillis = 0;
@@ -36,13 +38,14 @@ char resultH[7]; // Buffer big enough for 6-character float
 
 void setup() {
   if (DEBUG) {
-    SerialDEBUG->begin(DEBUG_BAUD, SERIAL_8N1, SERIAL_TX_ONLY);
+    //SerialDEBUG->begin(DEBUG_BAUD, SERIAL_8N1, SERIAL_TX_ONLY); // for ESP8266
+    SerialDEBUG->begin(DEBUG_BAUD, SERIAL_8N1); // for ESP32
     while (!SerialDEBUG);
     SerialDEBUG->println(F("Initializing.."));
   }
   pinMode(DHTPIN,INPUT_PULLUP);
-  pinMode(3, FUNCTION_3);
-  iot.pinReset = 3;
+  pinMode(DEVICE_PIN_RESET, FUNCTION_3);
+  iot.pinReset = DEVICE_PIN_RESET;
   iot.prod = true;
   iot.cleanSession = true;
   iot.setWill = true;
@@ -57,14 +60,12 @@ void setup() {
   iot.onAPConfigTimeout = callbackOnAPConfigTimeout;
   iot.onWiFiConnectTimeout = callbackOnWiFiConnectTimeout;  
   
-  ESP.wdtEnable(8000);      
   initSensors();
   iot.init(DEBUG?SerialDEBUG:NULL);
   delay(10);
 }
 
 void loop() {
-  ESP.wdtFeed();
   iot.loop();
   if (iot.isReady) {
     measureSensors();
