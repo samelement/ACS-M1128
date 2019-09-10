@@ -379,11 +379,11 @@ bool M1128::_mqttConnect() {
 }
 
 void M1128::_retrieveDeviceId() {
-  String addr = "";
+  String addr = String(_dev_id) + "S";
   #if defined(ESP8266)
-    addr = String(ESP.getChipId());
+    addr = addr + String(ESP.getChipId());
   #elif defined(ESP32)
-    addr = String((uint32_t)(ESP.getEfuseMac() >> 32));
+    addr = addr + String((uint32_t)(ESP.getEfuseMac() >> 32));
   #endif
   addr.toCharArray(_myAddr,32);
   _myAddr[32]='\0';
