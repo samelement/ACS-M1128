@@ -20,6 +20,8 @@
 #define WIFI_DEFAULT_SSID "SmartBell"
 #define WIFI_DEFAULT_PASS "abcd1234"
 
+#define DEVICE_PIN_RESET 3
+
 #define DEVICE_PIN_BUTTON_DEFSTATE HIGH // default is HIGH, it means active LOW.
 #define DEVICE_PIN_BUTTON_INPUT 0 // pin GPIO0 for input
 #define DEVICE_PIN_BUTTON_OUTPUT 2 // pin GPio2 for output
@@ -32,15 +34,16 @@ bool pinButtonCurrentState = DEVICE_PIN_BUTTON_DEFSTATE;
 
 void setup() {
   if (DEBUG) {
-    SerialDEBUG->begin(DEBUG_BAUD, SERIAL_8N1, SERIAL_TX_ONLY);
+    //SerialDEBUG->begin(DEBUG_BAUD, SERIAL_8N1, SERIAL_TX_ONLY); // for ESP8266
+    SerialDEBUG->begin(DEBUG_BAUD, SERIAL_8N1); // for ESP32
     while (!SerialDEBUG);
     SerialDEBUG->println("Initializing..");
   }
   pinMode(DEVICE_PIN_BUTTON_INPUT,INPUT_PULLUP);
   pinMode(DEVICE_PIN_BUTTON_OUTPUT,OUTPUT);
   digitalWrite(DEVICE_PIN_BUTTON_OUTPUT, DEVICE_PIN_BUTTON_DEFSTATE);
-  pinMode(3, FUNCTION_3);
-  iot.pinReset = 3;
+  pinMode(DEVICE_PIN_RESET, FUNCTION_3);
+  iot.pinReset = DEVICE_PIN_RESET;
   iot.prod = true;
   iot.cleanSession = true;
   iot.setWill = true;
@@ -55,13 +58,11 @@ void setup() {
   iot.onAPConfigTimeout = callbackOnAPConfigTimeout;
   iot.onWiFiConnectTimeout = callbackOnWiFiConnectTimeout;  
   
-  ESP.wdtEnable(8000);      
   iot.init(DEBUG?SerialDEBUG:NULL);
   delay(10);
 }
 
 void loop() {
-  ESP.wdtFeed();
   iot.loop();
   checkBellButton();
 }
