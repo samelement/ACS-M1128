@@ -11,8 +11,14 @@ SAM Element is an IoT platform. Visit our [website](https://www.samelement.com) 
   - [Arduino ESP8266 filesystem uploader](https://github.com/esp8266/arduino-esp8266fs-plugin)
   - [Arduino ESP32 filesystem uploader](https://github.com/me-no-dev/arduino-esp32fs-plugin)
 
+## TESTED (Latest Version):
+  - Tested with ESP8266 library v2.5.2
+  - Tested with ESP8266 filesystem uploader v0.4.0
+  - Tested with ESP32 library v1.0.4
+  - Tested with ESP32 filesystem uploader v1.0
+
 ## WiFi Connectivity
-  - Supported board: ESP32, ESP8266.
+  - Supported board: ESP32, ESP8266.  
   - Easy connect to SAM Element IoT platform.
   - Ready to use some working examples for real application.
   - WiFi configuration page ready.
