@@ -57,7 +57,8 @@ void loop() {
 void callbackOnConnect() {
   iot.mqtt->publish(iot.constructTopic("sensor/motion"), "true", false); 
   initPublish();    
-  iot.mqtt->publish(iot.constructTopic("$state"), "sleeping", true); 
+  iot.mqtt->publish(iot.constructTopic("$state"), "sleeping", true);
+  delay(3000);
   ESP.deepSleep(0);
 }
 
