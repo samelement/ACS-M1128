@@ -6,17 +6,15 @@ SAM Element is an IoT platform. Visit our [website](https://www.samelement.com) 
 ## Quick Links & Requirements
   - [Knowledgebase](https://ask.samelement.com)
   - [ESP8266 Documentation](https://arduino-esp8266.readthedocs.io/en/latest/index.html)
-  - [Arduino core for ESP8266 WiFi chip](https://github.com/esp8266/Arduino)
-  - [Arduino core for ESP32 WiFi chip](https://github.com/espressif/arduino-esp32)
-  - [Arduino ESP8266 filesystem uploader](https://github.com/esp8266/arduino-esp8266fs-plugin)
-  - [Arduino ESP32 filesystem uploader](https://github.com/me-no-dev/arduino-esp32fs-plugin)
+  - [Arduino ESP8266 Core WiFi chip](https://github.com/esp8266/Arduino)
+  - [Arduino ESP32 Core WiFi chip](https://github.com/espressif/arduino-esp32)
+  - [Arduino ESP8266FS uploader - plugin](https://github.com/esp8266/arduino-esp8266fs-plugin)
+  - [Arduino ESP32FS uploader - plugin](https://github.com/me-no-dev/arduino-esp32fs-plugin)
 
 ## TESTED (Latest Version):
   - Tested with ESP8266 library v2.5.2
-  - Tested with ESP8266 filesystem uploader v0.4.0
   - Tested with ESP32 library v1.0.4
-  - Tested with ESP32 filesystem uploader v1.0
-  - It is come to our attention that some may experiencing ESP8266 sketch data upload problem when using board library v2.6.1 with spiffs plugin v0.4.0. Please follow this [issue](https://github.com/samelement/ACS-M1128/issues/1) to get solution.
+  - It is come to our attention that some may experiencing sketch data upload problem when using ESP8266 board library v2.6.1 with ESP8266FS uploader plugin v0.4.0. Please follow this [issue](https://github.com/samelement/ACS-M1128/issues/1) to get solution.
 
 ## WiFi Connectivity
   - Supported board: ESP32, ESP8266.  
