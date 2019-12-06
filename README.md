@@ -16,6 +16,10 @@ SAM Element is an IoT platform. Visit our [website](https://www.samelement.com) 
   - Tested with ESP32 Board library v1.0.4
   - It is come to our attention that some may experiencing sketch data upload problem when using ESP8266 board library v2.6.1 with ESP8266FS uploader plugin v0.4.0. Please follow this [issue](https://github.com/samelement/ACS-M1128/issues/1) to get solution.
 
+## CAUTION:
+  - You must maintain publish rate at minimum 10s.
+  - SAM Element may suspend an account when an abusive behaviour detected.
+
 ## WiFi Connectivity
   - Supported board: ESP32, ESP8266.  
   - Easy connect to SAM Element IoT platform.
