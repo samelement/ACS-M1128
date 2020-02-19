@@ -7,7 +7,6 @@
 #define USING_AXTLS
 #include <time.h>
 #include <EEPROM.h>
-#include <time.h>
 #include "PubSubClient.h"
 #include "FS.h"
 
@@ -16,6 +15,7 @@
 #include <base64.h>
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
+#include <ESP8266httpUpdate.h>
 // force use of AxTLS (BearSSL is now default)
 #include <WiFiClientSecureAxTLS.h>
 using namespace axTLS;
@@ -30,6 +30,7 @@ using namespace axTLS;
 #include <WiFiClientSecure.h>
 #include <HTTPClient.h>
 #include "SPIFFS.h"
+#include <HTTPUpdate.h>
 
 #endif
 
@@ -74,7 +75,17 @@ typedef void (*callbackReceive)(char*, uint8_t*, unsigned int);
 class M1128 {
   public:
     M1128();
-
+	
+    class firmware {
+      public:
+        const char* name;
+        const char* version;
+    };
+    firmware fw;
+    const char* sammy = "1.1.0";
+    const char* model;
+    const char* name;
+    
     uint8_t pinReset = PIN_RESET;
     uint8_t wifiConnectRetry = WIFI_RETRY;
     uint32_t apConfigTimeout = AP_TIMEOUT;
@@ -88,7 +99,7 @@ class M1128 {
     bool cleanSession = false;
     bool setWill = true;
     uint32_t accessTokenExp = AUTH_ACCESS_TOKEN_EXP;
-
+	
     PubSubClient *mqtt;
     
     callbackFunction onReset;
@@ -97,7 +108,7 @@ class M1128 {
     callbackFunction onWiFiConfigChanged;
     callbackFunction onAPConfigTimeout;
     callbackFunction onWiFiConnectTimeout;
-    callbackReceive onReceive; 
+    callbackReceive onReceive;
 
     void reset();
     void restart();
@@ -109,6 +120,7 @@ class M1128 {
     const char* myId();
     void setId(const char* id);
     const char* constructTopic(const char* topic);
+	
   private:
     Stream *_serialDebug;
     IPAddress _wifi_ap_localip;
@@ -134,6 +146,7 @@ class M1128 {
     uint32_t _timeCurrentMillis = 0;
         
     uint8_t _pinResetButtonLast = HIGH;
+    const char* _constructTopicModel(const char* topic);
     char _topic_buf[MQTT_PAYLOAD_SIZE];
     char _myAddr[33];
     char _custAddr[33];
@@ -147,9 +160,23 @@ class M1128 {
     bool _mqttConnect();
     void _retrieveDeviceId();
     String _getContentType(String filename);
+    void _handleOnReceive(char* topic, uint8_t* payload, unsigned int length); 
     void _handleWifiConfig();
     void _handleNotFound();
     bool _handleFileRead(String path);
+    
+    void _initPublish();
+    void _initSubscribe();
+    void _updateCollectionPublish(String payload);
+    char _date[20];
+    const char* _dateTime();
+    void _twoDigit(int num);
+    String _updateCollection;
+    const char* _constructUpdateState(const char* status, const char* message, const char* date);
+    void _triggerUpdate(String newVersion);
+    void _updateExecution(int errorStatus, String urlUpdate);
+    char _mode[8];
+    
 };
 
 #endif

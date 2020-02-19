@@ -1,5 +1,5 @@
 /* 
- *  Motion sensor example with ESP8266-01:
+ *  Motion sensor example with ESP8266-01 for sammy version 1.1.0:
  *  
  *  1. Publish message "/sensor/motion" with value "true" whenever sensor triggered.
  *  2. When sensor is being triggered, it must send low signal to pin restart ESP (Board pin 6)
@@ -9,6 +9,11 @@
  */
 
 #include "M1128.h"
+
+#define PROJECT_NAME "Motion Sensor"
+#define PROJECT_MODEL "SAM-MS01"
+#define FIRMWARE_NAME "MS01"
+#define FIRMWARE_VERSION "1.00"
 
 #define DEBUG true
 #define DEBUG_BAUD 9600
@@ -41,6 +46,10 @@ void setup() {
   iot.wifiConnectTimeout = 120000;
   iot.devConfig(DEVELOPER_ROOT,DEVELOPER_USER,DEVELOPER_PASS);
   iot.wifiConfig(WIFI_DEFAULT_SSID,WIFI_DEFAULT_PASS);
+  iot.name = PROJECT_NAME;
+  iot.model = PROJECT_MODEL;
+  iot.fw.name = FIRMWARE_NAME;
+  iot.fw.version = FIRMWARE_VERSION;
   
   iot.onConnect = callbackOnConnect;
   iot.onAPConfigTimeout = callbackOnAPConfigTimeout;
@@ -72,14 +81,6 @@ void callbackOnWiFiConnectTimeout() {
 
 void initPublish() { 
   if (iot.mqtt->connected()) {    
-    iot.mqtt->publish(iot.constructTopic("$state"), "init", false);
-    iot.mqtt->publish(iot.constructTopic("$sammy"), "1.0.0", false);
-    iot.mqtt->publish(iot.constructTopic("$name"), "Motion Sensor", false);
-    iot.mqtt->publish(iot.constructTopic("$model"), "SAM-MS01", false);
-    iot.mqtt->publish(iot.constructTopic("$mac"), WiFi.macAddress().c_str(), false);
-    iot.mqtt->publish(iot.constructTopic("$localip"), WiFi.localIP().toString().c_str(), false);
-    iot.mqtt->publish(iot.constructTopic("$fw/name"), "MS01", false);
-    iot.mqtt->publish(iot.constructTopic("$fw/version"), "1.00", false);    
     iot.mqtt->publish(iot.constructTopic("$nodes"), "sensor", false);
   
   //define node "bell"
@@ -90,9 +91,6 @@ void initPublish() {
     iot.mqtt->publish(iot.constructTopic("sensor/motion/$name"), "Motion Sensor", false);
     iot.mqtt->publish(iot.constructTopic("sensor/motion/$settable"), "false", false);
     iot.mqtt->publish(iot.constructTopic("sensor/motion/$retained"), "false", false);
-    iot.mqtt->publish(iot.constructTopic("sensor/motion/$datatype"), "boolean", false);  
-
-  // set device to ready
-    iot.mqtt->publish(iot.constructTopic("$state"), "ready", false);  
+    iot.mqtt->publish(iot.constructTopic("sensor/motion/$datatype"), "boolean", false); 
   }
 }

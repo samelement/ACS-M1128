@@ -1,5 +1,5 @@
 /* 
- *  Smart relay example with ESP8266-01:
+ *  Smart relay example with ESP8266-01 for sammy version 1.1.0:
  *  
  *  1. Receive message "/relay/onoff/set" with value "true" or "false".
  *  2. When "true" it will trigger LOW to GPIO2, otherwise trigger HIGH.
@@ -7,6 +7,11 @@
  */
 
 #include "M1128.h"
+
+#define PROJECT_NAME "Smart Relay"
+#define PROJECT_MODEL "SAM-SMR01"
+#define FIRMWARE_NAME "WDB01"
+#define FIRMWARE_VERSION "1.00"
 
 #define DEBUG true
 #define DEBUG_BAUD 9600
@@ -44,13 +49,17 @@ void setup() {
   iot.wifiConnectTimeout = 120000;
   iot.devConfig(DEVELOPER_ROOT,DEVELOPER_USER,DEVELOPER_PASS);
   iot.wifiConfig(WIFI_DEFAULT_SSID,WIFI_DEFAULT_PASS);
+  iot.name = PROJECT_NAME;
+  iot.model = PROJECT_MODEL;
+  iot.fw.name = FIRMWARE_NAME;
+  iot.fw.version = FIRMWARE_VERSION;
   
   iot.onReceive = callbackOnReceive;
   iot.onConnect = callbackOnConnect;  
   iot.onReconnect = callbackOnReconnect;
   iot.onAPConfigTimeout = callbackOnAPConfigTimeout;
   iot.onWiFiConnectTimeout = callbackOnWiFiConnectTimeout;
-  
+
   iot.init(DEBUG?SerialDEBUG:NULL);
   delay(10);
 }
@@ -101,20 +110,8 @@ void switchMe(bool sm, bool publish) {
   if (publish && iot.mqtt->connected()) iot.mqtt->publish(iot.constructTopic("relay/onoff"), sm?"false":"true", true);   
 }
 
-void publishState(const char* state) {
-  if (iot.mqtt->connected()) iot.mqtt->publish(iot.constructTopic("$state"), state, true);  
-}
-
 void initPublish() {
-  if (iot.mqtt->connected()) {    
-    iot.mqtt->publish(iot.constructTopic("$state"), "init", false);
-    iot.mqtt->publish(iot.constructTopic("$sammy"), "1.0.0", false);
-    iot.mqtt->publish(iot.constructTopic("$name"), "Smart Relay", false);
-    iot.mqtt->publish(iot.constructTopic("$model"), "SAM-SMR01", false);
-    iot.mqtt->publish(iot.constructTopic("$mac"), WiFi.macAddress().c_str(), false);
-    iot.mqtt->publish(iot.constructTopic("$localip"), WiFi.localIP().toString().c_str(), false);
-    iot.mqtt->publish(iot.constructTopic("$fw/name"), "WDB01", false);
-    iot.mqtt->publish(iot.constructTopic("$fw/version"), "1.00", false);    
+  if (iot.mqtt->connected()) {       
     iot.mqtt->publish(iot.constructTopic("$reset"), "true", false);
     iot.mqtt->publish(iot.constructTopic("$restart"), "true", false);
     iot.mqtt->publish(iot.constructTopic("$nodes"), "relay", false);
@@ -127,7 +124,7 @@ void initPublish() {
     iot.mqtt->publish(iot.constructTopic("relay/onoff/$name"), "Relay On Off", false);
     iot.mqtt->publish(iot.constructTopic("relay/onoff/$settable"), "true", false);
     iot.mqtt->publish(iot.constructTopic("relay/onoff/$retained"), "true", false);
-    iot.mqtt->publish(iot.constructTopic("relay/onoff/$datatype"), "boolean", false);  
+    iot.mqtt->publish(iot.constructTopic("relay/onoff/$datatype"), "boolean", false);
   }
 }
 
@@ -137,7 +134,6 @@ void initSubscribe() {
     iot.mqtt->subscribe(iot.constructTopic("reset"),1);  
     iot.mqtt->subscribe(iot.constructTopic("restart"),1);  
     iot.mqtt->subscribe(iot.constructTopic("relay/onoff"),1);  
-    iot.mqtt->subscribe(iot.constructTopic("relay/onoff/set"),1);  
+    iot.mqtt->subscribe(iot.constructTopic("relay/onoff/set"),1);
   }
-  publishState("ready");
 }

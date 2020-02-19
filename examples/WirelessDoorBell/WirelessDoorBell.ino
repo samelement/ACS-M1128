@@ -1,5 +1,5 @@
 /* 
- *  Wireless door bell example with ESP8266-01:
+ *  Wireless door bell example with ESP8266-01 for sammy version 1.1.0:
  *  
  *  1. Publish message "/bell/button" with value "true" whenever GPIO0 (board pin 5) triggered.
  *  2. When the push button is being pressed, it must send low signal to GPIO0 (Board pin 5)
@@ -9,6 +9,11 @@
  */
 
 #include "M1128.h"
+
+#define PROJECT_NAME "Wireless Bell"
+#define PROJECT_MODEL "SAM-WDB01"
+#define FIRMWARE_NAME "WDB01"
+#define FIRMWARE_VERSION "1.00"
 
 #define DEBUG true
 #define DEBUG_BAUD 9600
@@ -51,6 +56,10 @@ void setup() {
   iot.wifiConnectTimeout = 120000;
   iot.devConfig(DEVELOPER_ROOT,DEVELOPER_USER,DEVELOPER_PASS);
   iot.wifiConfig(WIFI_DEFAULT_SSID,WIFI_DEFAULT_PASS);
+  iot.name = PROJECT_NAME;
+  iot.model = PROJECT_MODEL;
+  iot.fw.name = FIRMWARE_NAME;
+  iot.fw.version = FIRMWARE_VERSION;
   
   iot.onReceive = callbackOnReceive;
   iot.onConnect = callbackOnConnect;
@@ -118,20 +127,8 @@ void bellMe() {
   if (iot.mqtt->connected()) iot.mqtt->publish(iot.constructTopic("bell/button"), "true", false);   
 }
 
-void publishState(const char* state) {
-  if (iot.mqtt->connected()) iot.mqtt->publish(iot.constructTopic("$state"), state, true);  
-}
-
 void initPublish() {
-  if (iot.mqtt->connected()) {    
-    iot.mqtt->publish(iot.constructTopic("$state"), "init", false);
-    iot.mqtt->publish(iot.constructTopic("$sammy"), "1.0.0", false);
-    iot.mqtt->publish(iot.constructTopic("$name"), "Wireless Bell", false);
-    iot.mqtt->publish(iot.constructTopic("$model"), "SAM-WDB01", false);
-    iot.mqtt->publish(iot.constructTopic("$mac"), WiFi.macAddress().c_str(), false);
-    iot.mqtt->publish(iot.constructTopic("$localip"), WiFi.localIP().toString().c_str(), false);
-    iot.mqtt->publish(iot.constructTopic("$fw/name"), "WDB01", false);
-    iot.mqtt->publish(iot.constructTopic("$fw/version"), "1.00", false);    
+  if (iot.mqtt->connected()) {     
     iot.mqtt->publish(iot.constructTopic("$reset"), "true", false);
     iot.mqtt->publish(iot.constructTopic("$restart"), "true", false);
     iot.mqtt->publish(iot.constructTopic("$nodes"), "bell", false);
@@ -154,5 +151,4 @@ void initSubscribe() {
     iot.mqtt->subscribe(iot.constructTopic("restart"),1);  
     iot.mqtt->subscribe(iot.constructTopic("bell/button/set"),1);  
   }
-  publishState("ready");
 }

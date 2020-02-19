@@ -1,5 +1,5 @@
 /* 
- *  DHT22 sensor example with ESP32:
+ *  DHT22 sensor example with ESP8266-01 for sammy version 1.1.0:
  *  
  *  1. Publish message every sensorDelayMS to "/sensor/temp" and "/sensor/humid" for temperature and humidity.
  *  2. Connect DHT22 data out to GPIO0.
@@ -10,6 +10,11 @@
 #include <Adafruit_Sensor.h>
 #include <DHT.h>
 #include <DHT_U.h>
+
+#define PROJECT_NAME "Smart DHT22"
+#define PROJECT_MODEL "SAM-DHT22"
+#define FIRMWARE_NAME "DHT22"
+#define FIRMWARE_VERSION "1.00"
 
 #define DEBUG true
 #define DEBUG_BAUD 9600
@@ -53,6 +58,10 @@ void setup() {
   iot.wifiConnectTimeout = 120000;
   iot.devConfig(DEVELOPER_ROOT,DEVELOPER_USER,DEVELOPER_PASS);
   iot.wifiConfig(WIFI_DEFAULT_SSID,WIFI_DEFAULT_PASS);
+  iot.name = PROJECT_NAME;
+  iot.model = PROJECT_MODEL;
+  iot.fw.name = FIRMWARE_NAME;
+  iot.fw.version = FIRMWARE_VERSION;
   
   iot.onReceive = callbackOnReceive;
   iot.onConnect = callbackOnConnect;
@@ -176,20 +185,8 @@ void callbackOnWiFiConnectTimeout() {
   //ESP.deepSleep(300000000); // sleep for 5 minutes
 }
 
-void publishState(const char* state) {
-  if (iot.mqtt->connected()) iot.mqtt->publish(iot.constructTopic("$state"), state, true);  
-}
-
 void initPublish() {
-  if (iot.mqtt->connected()) {    
-    iot.mqtt->publish(iot.constructTopic("$state"), "init", false);
-    iot.mqtt->publish(iot.constructTopic("$sammy"), "1.0.0", false);
-    iot.mqtt->publish(iot.constructTopic("$name"), "Smart DHT22", false);
-    iot.mqtt->publish(iot.constructTopic("$model"), "SAM-DHT22", false);
-    iot.mqtt->publish(iot.constructTopic("$mac"), WiFi.macAddress().c_str(), false);
-    iot.mqtt->publish(iot.constructTopic("$localip"), WiFi.localIP().toString().c_str(), false);
-    iot.mqtt->publish(iot.constructTopic("$fw/name"), "DHT22", false);
-    iot.mqtt->publish(iot.constructTopic("$fw/version"), "1.00", false);    
+  if (iot.mqtt->connected()) {      
     iot.mqtt->publish(iot.constructTopic("$reset"), "true", false);
     iot.mqtt->publish(iot.constructTopic("$restart"), "true", false);
     iot.mqtt->publish(iot.constructTopic("$nodes"), "sensor", false);
@@ -220,5 +217,4 @@ void initSubscribe() {
     iot.mqtt->subscribe(iot.constructTopic("reset"),1);  
     iot.mqtt->subscribe(iot.constructTopic("restart"),1);  
   }
-  publishState("ready");
 }
