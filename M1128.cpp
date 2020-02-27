@@ -434,14 +434,30 @@ void M1128::_initPublish(){
   dtostrf(floor(ESP.getSketchSize()/1000)+1, 3, 0, sizeNow);
   if (mqtt->connected()) {
     _mqttClient.publish(constructTopic("$state"), "init", false);
-	_mqttClient.publish(constructTopic("$sammy"), sammy, false);
-	_mqttClient.publish(constructTopic("$name"), name, false);
-	_mqttClient.publish(constructTopic("$model"), model, false);
-	_mqttClient.publish(constructTopic("$mac"), WiFi.macAddress().c_str(), false);
-	_mqttClient.publish(constructTopic("$localip"), WiFi.localIP().toString().c_str(), false);
-	_mqttClient.publish(constructTopic("$fw/name"), fw.name, false);
-	_mqttClient.publish(constructTopic("$fw/version"), fw.version, false);
-	_mqttClient.publish(constructTopic("$fw/size"), sizeNow, false);
+    _mqttClient.publish(constructTopic("$sammy"), sammy, false);
+    _mqttClient.publish(constructTopic("$name"), name, false);
+    _mqttClient.publish(constructTopic("$model"), model, false);
+    _mqttClient.publish(constructTopic("$mac"), WiFi.macAddress().c_str(), false);
+    _mqttClient.publish(constructTopic("$localip"), WiFi.localIP().toString().c_str(), false);
+    _mqttClient.publish(constructTopic("$fw/name"), fw.name, false);
+    _mqttClient.publish(constructTopic("$fw/version"), fw.version, false);
+    _mqttClient.publish(constructTopic("$fw/size"), sizeNow, false);
+    EEPROM.begin(512);
+    int add = 0;
+    unsigned char k;
+    k=EEPROM.read(add);
+    if (k == 'm' || k == 'a'){
+      _mode[0]=k;
+      add++;
+      while(k != '\0' && add<500)   //Read until null character
+      {    
+        k=EEPROM.read(add);
+        _mode[add]=k;
+        add++;
+      }
+      _mode[add]='\0';
+    }
+    _mqttClient.publish(constructTopic("$fw/update/mode"), _mode, true);
   }
 }
 
@@ -452,8 +468,12 @@ void M1128::_handleOnReceive(char* topic, uint8_t* payload, unsigned int length)
   if (strcmp(topic,constructTopic("$fw/update/mode/set"))==0 && strPayload) {
     strPayload.toCharArray(_mode,7);
     _mqttClient.publish(constructTopic("$fw/update/mode"), _mode, true);
+    EEPROM.begin(512);
+    for(int i=0;i<8;i++){
+      EEPROM.write(i,_mode[i]);
+    }
+    EEPROM.commit();
   }
-  else if (strcmp(topic,constructTopic("$fw/update/mode"))==0 && strPayload) strPayload.toCharArray(_mode,7); 
   else if (strcmp(topic,constructTopic("$fw/update/trigger"))==0 && strPayload) _triggerUpdate(strPayload);
   else if (strcmp(topic,_constructTopicModel("$fw/updates"))==0 && strPayload) _updateCollectionPublish(strPayload);
   else if (strcmp(topic,constructTopic("$fw/update/state"))==0 && strPayload.substring(0,strPayload.indexOf(";",0)).indexOf("updating",0) >= 0) _mqttClient.publish(constructTopic("$fw/update/state"),_constructUpdateState("completed",fw.version, _dateTime()),true);

@@ -175,7 +175,7 @@ class M1128 {
     const char* _constructUpdateState(const char* status, const char* message, const char* date);
     void _triggerUpdate(String newVersion);
     void _updateExecution(int errorStatus, String urlUpdate);
-    char _mode[8];
+    char _mode[8] = { 'a', 'u', 't', 'o','\0','\0','\0'};
     
 };
 
