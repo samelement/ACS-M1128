@@ -66,12 +66,19 @@ void M1128::init(Stream *serialDebug) {
   }
   
   _mqttClient.setServer(_mqttHost,MQTT_BROKER_PORT);
-  using namespace std::placeholders; 
-  _mqttClient.setCallback(std::bind(&M1128::_handleOnReceive, this, _1, _2, _3));
+  
+  #if defined(ESP8266)
+  configTime(0, 0, "pool.ntp.org", "time.nist.gov"); //get real time from server format: configTime(timezone,dst,server1,server2)
+  #endif
+  
   mqtt = &_mqttClient;
   
   if (!_checkResetButton()) _initNetwork(false);
+  #if defined(ESP32)
   configTime(0, 0, "pool.ntp.org", "time.nist.gov"); //get real time from server format: configTime(timezone,dst,server1,server2)
+  #endif
+  using namespace std::placeholders; 
+  _mqttClient.setCallback(std::bind(&M1128::_handleOnReceive, this, _1, _2, _3));
   if (_serialDebug) _serialDebug->println(F("End of initialization, ready for loop.."));
 }
 
@@ -380,17 +387,16 @@ bool M1128::_mqttConnect() {
     if (res) {
       if (_serialDebug) _serialDebug->println(F("Connected to MQTT server"));
       if (_startWiFi) {
-		if (onConnect!=NULL) {
-		  _initPublish();
-		  onConnect(); 
-		  _initSubscribe();
-		}
-		_startWiFi = false;
+        _initPublish();
+        if (onConnect!=NULL) {
+          onConnect(); 
+        }
+        _startWiFi = false;
       } 
-	  else if (onReconnect!=NULL) {
-		onReconnect();     
-		_initSubscribe();
-	  }
+      else if (onReconnect!=NULL) {
+        onReconnect();     
+      }
+      _initSubscribe();
       if (mqtt->connected()) _mqttClient.publish(constructTopic("$state"), "ready", true);
     } else {
       if (_serialDebug) _serialDebug->println(F("Could not connect to MQTT server"));   
@@ -458,6 +464,8 @@ void M1128::_initPublish(){
       _mode[add]='\0';
     }
     _mqttClient.publish(constructTopic("$fw/update/mode"), _mode, true);
+    _mqttClient.publish(constructTopic("$reset"), resettable?"true":"false", false);
+    _mqttClient.publish(constructTopic("$restart"), restartable?"true":"false", false);
   }
 }
 
@@ -465,7 +473,9 @@ void M1128::_handleOnReceive(char* topic, uint8_t* payload, unsigned int length)
   String strPayload;
   strPayload.reserve(length);
   for (uint32_t i = 0; i < length; i++) strPayload += (char)payload[i];
-  if (strcmp(topic,constructTopic("$fw/update/mode/set"))==0 && strPayload) {
+  if (strcmp(topic,constructTopic("reset"))==0 && strPayload == "true" && resettable) reset();
+  else if (strcmp(topic,constructTopic("restart"))==0 && strPayload == "true" && restartable) restart();
+  else if (strcmp(topic,constructTopic("fw/update/mode"))==0 && strPayload) {
     strPayload.toCharArray(_mode,7);
     _mqttClient.publish(constructTopic("$fw/update/mode"), _mode, true);
     EEPROM.begin(512);
@@ -474,9 +484,9 @@ void M1128::_handleOnReceive(char* topic, uint8_t* payload, unsigned int length)
     }
     EEPROM.commit();
   }
-  else if (strcmp(topic,constructTopic("$fw/update/trigger"))==0 && strPayload) _triggerUpdate(strPayload);
+  else if (strcmp(topic,constructTopic("fw/update/trigger"))==0 && strcmp(_mode,"manual")==0 && strPayload && strPayload != "") _triggerUpdate(strPayload);
   else if (strcmp(topic,_constructTopicModel("$fw/updates"))==0 && strPayload) _updateCollectionPublish(strPayload);
-  else if (strcmp(topic,constructTopic("$fw/update/state"))==0 && strPayload.substring(0,strPayload.indexOf(";",0)).indexOf("updating",0) >= 0) _mqttClient.publish(constructTopic("$fw/update/state"),_constructUpdateState("completed",fw.version, _dateTime()),true);
+  else if (strcmp(topic,constructTopic("$fw/update/state"))==0 && strPayload.substring(0,8) == "updating") _mqttClient.publish(constructTopic("$fw/update/state"),_constructUpdateState("completed",fw.version, _dateTime()),true);
   else if (onReceive!=NULL) onReceive(topic, payload, length);
 }
 
@@ -522,8 +532,11 @@ bool M1128::_handleFileRead(String path) { // send the right file to the client 
 
 void M1128::_initSubscribe(){
   if (mqtt->connected()) {
-    _mqttClient.subscribe(constructTopic("$fw/update/mode/set"),1);
-    _mqttClient.subscribe(constructTopic("$fw/update/trigger"),1);
+    if (resettable) _mqttClient.subscribe(constructTopic("reset"),1);
+    if (restartable) _mqttClient.subscribe(constructTopic("restart"),1);
+    _mqttClient.subscribe(constructTopic("fw/update/mode"),1);
+    _mqttClient.subscribe(constructTopic("fw/update/trigger"),1);
+    _mqttClient.subscribe(constructTopic("$fw/update/state"),1);
     _mqttClient.subscribe(_constructTopicModel("$fw/updates"),1);
   }
 }
@@ -595,7 +608,10 @@ const char* M1128::_dateTime() {
     int year = 0;
     time_t now = time(nullptr);
     struct tm * breaktime = gmtime(&now);
-    year = breaktime->tm_year;
+    while (year == 0) { 
+      year = breaktime->tm_year;
+	  delay(10);
+	}
     if (year>100){
       strcpy(_date,String(year+1900).c_str());
       strcat(_date,"-");
@@ -623,7 +639,7 @@ void M1128::_twoDigit(int num){
 const char* M1128::_constructUpdateState(const char* status, const char* message, const char* date){
   #if defined(ESP8266)
     char updateState[500];
-	strcpy(updateState,status);
+    strcpy(updateState,status);
     strcat(updateState,";");
     strcat(updateState,message);
     strcat(updateState,";");
@@ -641,26 +657,25 @@ void M1128::_triggerUpdate(String version){
   String urlUpdate = "";
   if (_updateCollection.length()>0) {
     int oldIndex = _updateCollection.indexOf(version,0);
-	int newIndex = 0;
+    int newIndex = 0;
     if (oldIndex >= 0){
       _mqttClient.publish(constructTopic("$fw/update/state"),_constructUpdateState("starting",version.c_str(), _dateTime()),true);
       for (int indexProperties = 0;indexProperties <= 2;indexProperties++){
         if (indexProperties < 2) newIndex = _updateCollection.indexOf(";",oldIndex+1);
-	    else if (indexProperties == 2) newIndex = _updateCollection.indexOf("|",oldIndex);
+        else if (indexProperties == 2) newIndex = _updateCollection.indexOf("|",oldIndex);
         if (indexProperties == 0) {
           if (ESP.getFreeSketchSpace() >= _updateCollection.substring(oldIndex+1,newIndex).toInt()*1000) errorStatus = 0;
           else if (ESP.getFreeSketchSpace() < _updateCollection.substring(oldIndex+1,newIndex).toInt()*1000) errorStatus = 1;
         }
         else if (indexProperties == 2) {
           if (newIndex >= 0) urlUpdate = _updateCollection.substring(oldIndex+1,newIndex);
-		  else urlUpdate = _updateCollection.substring(oldIndex+1);
-	    }
+          else urlUpdate = _updateCollection.substring(oldIndex+1);
+        }
         oldIndex = newIndex;
       }
-	  _updateExecution(errorStatus,urlUpdate);
+      _updateExecution(errorStatus,urlUpdate);
     }
   }
-  else _mqttClient.publish(constructTopic("$fw/update/state"),_constructUpdateState("failed","Unknown error update, please restart this device to try updating again", _dateTime()),true);
 }
 
 void M1128::_updateExecution(int errorStatus,String urlUpdate){
@@ -668,22 +683,22 @@ void M1128::_updateExecution(int errorStatus,String urlUpdate){
   else if (errorStatus == 1) _mqttClient.publish(constructTopic("$fw/update/state"),_constructUpdateState("failed","This device doesn't have enough memory to update to the latest version", _dateTime()),true);
   else if (errorStatus == 0) {
     String errorString = "";
-    _mqttClient.publish(constructTopic("$fw/update/state"),_constructUpdateState("updating",urlUpdate.c_str(), _dateTime()),true);
+    _mqttClient.publish(constructTopic("$fw/update/state"),_constructUpdateState("updating","Please wait until completed.", _dateTime()),true);
     #if defined(ESP8266)
       t_httpUpdate_return ret = ESPhttpUpdate.update(urlUpdate);
     #elif defined(ESP32)
-	  WiFiClient client;
+      WiFiClient client;
       t_httpUpdate_return ret = httpUpdate.update(client,urlUpdate);
     #endif
     switch (ret) {
       case HTTP_UPDATE_FAILED:
-	    #if defined(ESP8266)
+        #if defined(ESP8266)
           errorString += String(ESPhttpUpdate.getLastError());
           errorString += ESPhttpUpdate.getLastErrorString();
-		#elif defined(ESP32)
-		  errorString += String(httpUpdate.getLastError());
+        #elif defined(ESP32)
+          errorString += String(httpUpdate.getLastError());
           errorString += httpUpdate.getLastErrorString();
-		#endif
+        #endif
         _mqttClient.publish(constructTopic("$fw/update/state"),_constructUpdateState("failed",errorString.c_str(), _dateTime()),true);
         break;
       

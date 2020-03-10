@@ -50,6 +50,8 @@ void setup() {
   iot.model = PROJECT_MODEL;
   iot.fw.name = FIRMWARE_NAME;
   iot.fw.version = FIRMWARE_VERSION;
+  iot.resettable = false;
+  iot.restartable = false;
   
   iot.onConnect = callbackOnConnect;
   iot.onAPConfigTimeout = callbackOnAPConfigTimeout;

@@ -98,6 +98,8 @@ class M1128 {
     bool prod = false;
     bool cleanSession = false;
     bool setWill = true;
+	bool resettable = false;
+	bool restartable = false;
     uint32_t accessTokenExp = AUTH_ACCESS_TOKEN_EXP;
 	
     PubSubClient *mqtt;

@@ -53,6 +53,8 @@ void setup() {
   iot.model = PROJECT_MODEL;
   iot.fw.name = FIRMWARE_NAME;
   iot.fw.version = FIRMWARE_VERSION;
+  iot.resettable = true;
+  iot.restartable = true;
   
   iot.onReceive = callbackOnReceive;
   iot.onConnect = callbackOnConnect;  
@@ -79,9 +81,7 @@ void callbackOnReceive(char* topic, byte* payload, unsigned int length) {
     SerialDEBUG->print("With value: ");
     SerialDEBUG->println(strPayload);
   }
-  if (strcmp(topic,iot.constructTopic("reset"))==0 && strPayload=="true") iot.reset();
-  else if (strcmp(topic,iot.constructTopic("restart"))==0 && strPayload=="true") iot.restart();
-  else if (strcmp(topic,iot.constructTopic("relay/onoff/set"))==0 && strPayload=="true") switchMe(!DEVICE_PIN_BUTTON_DEFSTATE,true);
+  if (strcmp(topic,iot.constructTopic("relay/onoff/set"))==0 && strPayload=="true") switchMe(!DEVICE_PIN_BUTTON_DEFSTATE,true);
   else if (strcmp(topic,iot.constructTopic("relay/onoff/set"))==0 && strPayload=="false") switchMe(DEVICE_PIN_BUTTON_DEFSTATE,true);
   else if (strcmp(topic,iot.constructTopic("relay/onoff"))==0 && strPayload=="true") switchMe(!DEVICE_PIN_BUTTON_DEFSTATE,false);
   else if (strcmp(topic,iot.constructTopic("relay/onoff"))==0 && strPayload=="false") switchMe(DEVICE_PIN_BUTTON_DEFSTATE,false);  
@@ -112,8 +112,6 @@ void switchMe(bool sm, bool publish) {
 
 void initPublish() {
   if (iot.mqtt->connected()) {       
-    iot.mqtt->publish(iot.constructTopic("$reset"), "true", false);
-    iot.mqtt->publish(iot.constructTopic("$restart"), "true", false);
     iot.mqtt->publish(iot.constructTopic("$nodes"), "relay", false);
   
   //define node "relay"
@@ -131,8 +129,6 @@ void initPublish() {
 void initSubscribe() {
   if (iot.mqtt->connected()) {
     // subscribe listen
-    iot.mqtt->subscribe(iot.constructTopic("reset"),1);  
-    iot.mqtt->subscribe(iot.constructTopic("restart"),1);  
     iot.mqtt->subscribe(iot.constructTopic("relay/onoff"),1);  
     iot.mqtt->subscribe(iot.constructTopic("relay/onoff/set"),1);
   }

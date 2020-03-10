@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>WiFi Configuration</title>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="icon" type="image/png" href="images/favicon.png"/>
+	<link rel="stylesheet" type="text/css" href="css/main.css">
+</head>
+<body>
+	<div class="limiter">
+		<div class="container-login100" style="background-image: url('images/bg-01.jpg');">
+			<div class="wrap-login100">
+				<form id="wifi" class="login100-form" action="/" target="dummyframe">
+					<div class="wifi-logo"><img src="images/wifi.png" border=0 alt="WiFi" /></div>
+
+					<span id="title" class="login100-form-title p-b-34 p-t-27">
+						Configuration
+					</span>
+
+					<div class="wrap-input100 validate-input">
+						<input id="ssid" class="input100" type="text" name="ssid" placeholder="Your WiFi SSID">
+					</div>
+
+					<div class="wrap-input100 validate-input">
+						<input id="password" class="input100" type="test" name="password" placeholder="Your WiFi Password">
+					</div>
+
+					<div class="container-login100-form-btn">
+						<button class="login100-form-btn">
+							SAVE
+						</button>
+					</div>
+					<div class="powered-by"><a href="https://www.samelement.com" target="_blank"><img src="images/powered.png" border=0 alt="Powered by SAM Element" /></a></div>
+				</form>
+				<iframe width="0" height="0" border="0" name="dummyframe" id="dummyframe"></iframe>
+			</div>
+		</div>
+	</div>
+	<script>
+		document.getElementById('wifi').onsubmit = function() {
+			document.getElementById("title").innerHTML="Configuration Saved!";
+		};
+	</script>
+</body>
+</html>

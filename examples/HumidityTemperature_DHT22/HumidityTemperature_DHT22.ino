@@ -62,10 +62,10 @@ void setup() {
   iot.model = PROJECT_MODEL;
   iot.fw.name = FIRMWARE_NAME;
   iot.fw.version = FIRMWARE_VERSION;
+  iot.resettable = true;
+  iot.restartable = true;
   
-  iot.onReceive = callbackOnReceive;
   iot.onConnect = callbackOnConnect;
-  iot.onReconnect = callbackOnReconnect;
   iot.onAPConfigTimeout = callbackOnAPConfigTimeout;
   iot.onWiFiConnectTimeout = callbackOnWiFiConnectTimeout;  
   
@@ -152,28 +152,8 @@ void sendData() {
   }
 }
 
-void callbackOnReceive(char* topic, byte* payload, unsigned int length) {
-  String strPayload;
-  strPayload.reserve(length);
-  for (uint32_t i = 0; i < length; i++) strPayload += (char)payload[i];
-
-  if (DEBUG) {
-    SerialDEBUG->print(F("Receiving topic: "));
-    SerialDEBUG->println(topic);
-    SerialDEBUG->print(F("With value: "));
-    SerialDEBUG->println(strPayload);
-  }
-  if (strcmp(topic,iot.constructTopic("reset"))==0 && strPayload=="true") iot.reset();
-  else if (strcmp(topic,iot.constructTopic("restart"))==0 && strPayload=="true") iot.restart();
-}
-
 void callbackOnConnect() {
   initPublish();    
-  initSubscribe();
-}
-
-void callbackOnReconnect() {
-  initSubscribe();
 }
 
 void callbackOnAPConfigTimeout() {
@@ -187,8 +167,6 @@ void callbackOnWiFiConnectTimeout() {
 
 void initPublish() {
   if (iot.mqtt->connected()) {      
-    iot.mqtt->publish(iot.constructTopic("$reset"), "true", false);
-    iot.mqtt->publish(iot.constructTopic("$restart"), "true", false);
     iot.mqtt->publish(iot.constructTopic("$nodes"), "sensor", false);
   
   //define node "sensor"
@@ -209,12 +187,5 @@ void initPublish() {
     iot.mqtt->publish(iot.constructTopic("sensor/humid/$datatype"), "float", false);    
     iot.mqtt->publish(iot.constructTopic("sensor/humid/$unit"), "%", false);  
     iot.mqtt->publish(iot.constructTopic("sensor/humid/$format"), "0:100", false);  
-  }
-}
-
-void initSubscribe() {
-  if (iot.mqtt->connected()) { 
-    iot.mqtt->subscribe(iot.constructTopic("reset"),1);  
-    iot.mqtt->subscribe(iot.constructTopic("restart"),1);  
   }
 }

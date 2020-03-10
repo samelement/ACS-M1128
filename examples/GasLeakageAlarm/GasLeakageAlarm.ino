@@ -57,10 +57,10 @@ void setup() {
   iot.model = PROJECT_MODEL;
   iot.fw.name = FIRMWARE_NAME;
   iot.fw.version = FIRMWARE_VERSION;
+  iot.resettable = true;
+  iot.restartable = true;
   
-  iot.onReceive = callbackOnReceive;
   iot.onConnect = callbackOnConnect;
-  iot.onReconnect = callbackOnReconnect;
   iot.onAPConfigTimeout = callbackOnAPConfigTimeout;
   iot.onWiFiConnectTimeout = callbackOnWiFiConnectTimeout;  
   
@@ -73,28 +73,8 @@ void loop() {
   checkSensor();
 }
 
-void callbackOnReceive(char* topic, byte* payload, unsigned int length) {
-  String strPayload;
-  strPayload.reserve(length);
-  for (uint32_t i = 0; i < length; i++) strPayload += (char)payload[i];
-
-  if (DEBUG) {
-    SerialDEBUG->print(F("Receiving topic: "));
-    SerialDEBUG->println(topic);
-    SerialDEBUG->print("With value: ");
-    SerialDEBUG->println(strPayload);
-  }
-  if (strcmp(topic,iot.constructTopic("reset"))==0 && strPayload=="true") iot.reset();
-  else if (strcmp(topic,iot.constructTopic("restart"))==0 && strPayload=="true") iot.restart();
-}
-
 void callbackOnConnect() {
-  initPublish();    
-  initSubscribe();
-}
-
-void callbackOnReconnect() {
-  initSubscribe();
+  initPublish();   
 }
 
 void callbackOnAPConfigTimeout() {
@@ -119,8 +99,6 @@ void checkSensor() {
 
 void initPublish() {
   if (iot.mqtt->connected()) {       
-    iot.mqtt->publish(iot.constructTopic("$reset"), "true", false);
-    iot.mqtt->publish(iot.constructTopic("$restart"), "true", false);
     iot.mqtt->publish(iot.constructTopic("$nodes"), "sensor", false);
   
   //define node "sensor"
@@ -132,12 +110,5 @@ void initPublish() {
     iot.mqtt->publish(iot.constructTopic("sensor/lpg/$settable"), "false", false);
     iot.mqtt->publish(iot.constructTopic("sensor/lpg/$retained"), "true", false);
     iot.mqtt->publish(iot.constructTopic("sensor/lpg/$datatype"), "boolean", false);  
-  }
-}
-
-void initSubscribe() {
-  if (iot.mqtt->connected()) { 
-    iot.mqtt->subscribe(iot.constructTopic("reset"),1);  
-    iot.mqtt->subscribe(iot.constructTopic("restart"),1);  
   }
 }

@@ -60,6 +60,8 @@ void setup() {
   iot.model = PROJECT_MODEL;
   iot.fw.name = FIRMWARE_NAME;
   iot.fw.version = FIRMWARE_VERSION;
+  iot.resettable = true;
+  iot.restartable = true;
   
   iot.onReceive = callbackOnReceive;
   iot.onConnect = callbackOnConnect;
@@ -87,9 +89,7 @@ void callbackOnReceive(char* topic, byte* payload, unsigned int length) {
     SerialDEBUG->print("With value: ");
     SerialDEBUG->println(strPayload);
   }
-  if (strcmp(topic,iot.constructTopic("reset"))==0 && strPayload=="true") iot.reset();
-  else if (strcmp(topic,iot.constructTopic("restart"))==0 && strPayload=="true") iot.restart();
-  else if (strcmp(topic,iot.constructTopic("bell/button/set"))==0 && strPayload=="true") bellMe();
+  if (strcmp(topic,iot.constructTopic("bell/button/set"))==0 && strPayload=="true") bellMe();
 }
 
 void callbackOnConnect() {
@@ -129,8 +129,6 @@ void bellMe() {
 
 void initPublish() {
   if (iot.mqtt->connected()) {     
-    iot.mqtt->publish(iot.constructTopic("$reset"), "true", false);
-    iot.mqtt->publish(iot.constructTopic("$restart"), "true", false);
     iot.mqtt->publish(iot.constructTopic("$nodes"), "bell", false);
   
   //define node "bell"
@@ -147,8 +145,6 @@ void initPublish() {
 
 void initSubscribe() {
   if (iot.mqtt->connected()) {
-    iot.mqtt->subscribe(iot.constructTopic("reset"),1);  
-    iot.mqtt->subscribe(iot.constructTopic("restart"),1);  
     iot.mqtt->subscribe(iot.constructTopic("bell/button/set"),1);  
   }
 }
