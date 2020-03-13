@@ -1,5 +1,5 @@
 /* 
- *  Smart relay example with ESP8266-01 for sammy version 1.1.0:
+ *  Smart relay example with ESP-32 for sammy version 1.1.0:
  *  
  *  1. Receive message "/relay/onoff/set" with value "true" or "false".
  *  2. When "true" it will trigger LOW to GPIO2, otherwise trigger HIGH.
